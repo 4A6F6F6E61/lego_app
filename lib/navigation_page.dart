@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:lego_app/tabs/home.dart';
-import 'package:lego_app/tabs/settings.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yaru/yaru.dart';
 
 class NavigationPage extends StatefulWidget {
-  const NavigationPage({super.key});
+  const NavigationPage({super.key, required this.navShell});
+
+  final StatefulNavigationShell navShell;
 
   @override
   State<NavigationPage> createState() => _NavigationPageState();
 }
 
+class Tab {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+
+  Tab({required this.icon, required this.selectedIcon, required this.label});
+}
+
 class _NavigationPageState extends State<NavigationPage> {
-  final _items = <Widget, (IconData, IconData, String)>{
-    const Home(): (YaruIcons.home, YaruIcons.home_filled, 'Home'),
-    const Settings(): (YaruIcons.settings, YaruIcons.settings_filled, 'Settings'),
-  };
-  int _selectedIndex = 0;
+  final _tabs = <Tab>[
+    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Home'),
+    Tab(icon: YaruIcons.settings, selectedIcon: YaruIcons.settings_filled, label: 'Settings'),
+  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: YaruWindowTitleBar(title: const Text('Yaru Example')),
+      appBar: YaruWindowTitleBar(title: const Text('Lego App')),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) {
@@ -27,43 +35,43 @@ class _NavigationPageState extends State<NavigationPage> {
               children: [
                 NavigationRail(
                   destinations: [
-                    for (final item in _items.entries)
+                    for (final tab in _tabs)
                       NavigationRailDestination(
-                        icon: Icon(item.value.$1),
+                        icon: Icon(tab.icon),
                         selectedIcon: Icon(
-                          item.value.$2,
+                          tab.selectedIcon,
                           color: Theme.of(context).colorScheme.primary,
                         ),
-                        label: Text(item.value.$3),
+                        label: Text(tab.label),
                       ),
                   ],
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+                  selectedIndex: widget.navShell.currentIndex,
+                  onDestinationSelected: (index) => widget.navShell.goBranch(index),
                   extended: true,
                 ),
                 const VerticalDivider(width: 0.0),
-                Expanded(child: Center(child: _items.entries.elementAt(_selectedIndex).key)),
+                Expanded(child: widget.navShell),
               ],
             );
           } else {
             return Column(
               children: [
-                Expanded(child: Center(child: _items.entries.elementAt(_selectedIndex).key)),
+                Expanded(child: widget.navShell),
                 const Divider(height: 0.0),
                 NavigationBar(
                   destinations: [
-                    for (final item in _items.entries)
+                    for (final tab in _tabs)
                       NavigationDestination(
-                        icon: Icon(item.value.$1),
+                        icon: Icon(tab.icon),
                         selectedIcon: Icon(
-                          item.value.$2,
+                          tab.selectedIcon,
                           color: Theme.of(context).colorScheme.primary,
                         ),
-                        label: item.value.$3,
+                        label: tab.label,
                       ),
                   ],
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+                  selectedIndex: widget.navShell.currentIndex,
+                  onDestinationSelected: (index) => widget.navShell.goBranch(index),
                 ),
               ],
             );

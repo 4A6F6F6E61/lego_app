@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/material.dart';
-import 'package:lego_app/navigation_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:lego_app/router.dart';
+import 'package:lego_app/settings.dart';
 import 'package:yaru/yaru.dart';
 
 Future<void> main() async {
@@ -12,7 +15,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SemanticsBinding.instance.ensureSemantics();
 
+  await dotenv.load();
+  await Settings.init();
+
   runApp(const App());
+
+  doWhenWindowReady(() {
+    appWindow.minSize = Size(150, 100);
+    appWindow.size = Size(1280, 720);
+    appWindow.alignment = Alignment.center;
+    appWindow.show();
+  });
 }
 
 class App extends StatelessWidget {
@@ -60,15 +73,15 @@ class _App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Yaru',
+    return MaterialApp.router(
+      title: 'Lego App',
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       themeMode: themeMode,
       darkTheme: darkTheme,
       highContrastTheme: highContrastDarkTheme,
       highContrastDarkTheme: highContrastDarkTheme,
-      home: NavigationPage(),
+      routerConfig: router,
     );
   }
 }
