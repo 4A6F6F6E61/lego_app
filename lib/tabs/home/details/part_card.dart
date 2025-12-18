@@ -10,21 +10,30 @@ class PartCard extends StatelessWidget {
 
   final SetPart part;
 
-  Future<void> _showPartDetails(BuildContext context) async {
+  Future<void> showPartDetails(BuildContext context) async {
     await showDialog(
       context: context,
       builder: (context) => _PartDetailDialog(part: part),
     );
   }
 
-  Future<void> cycleQuantityFound() async {
+  Future<void> increaseQuantityFound() async {
     if (part.isFinished) {
-      await supabase.from('set_parts').update({'quantity_found': 0}).eq('id', part.id);
       return;
     }
     await supabase
         .from('set_parts')
         .update({'quantity_found': part.quantityFound + 1})
+        .eq('id', part.id);
+  }
+
+  Future<void> decreaseQuantityFound() async {
+    if (part.quantityFound <= 0) {
+      return;
+    }
+    await supabase
+        .from('set_parts')
+        .update({'quantity_found': part.quantityFound - 1})
         .eq('id', part.id);
   }
 
@@ -47,7 +56,7 @@ class PartCard extends StatelessWidget {
       border: Border.all(width: 2),
       child: InkWell(
         onTap: () async {
-          await cycleQuantityFound();
+          await showPartDetails(context);
         },
         child: YaruTile(
           title: Text(part.name ?? 'Unknown Part', maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -60,11 +69,22 @@ class PartCard extends StatelessWidget {
                   fit: BoxFit.contain,
                 )
               : const Icon(Icons.extension),
-          trailing: YaruIconButton(
-            icon: const Icon(YaruIcons.information),
-            onPressed: () async {
-              await _showPartDetails(context);
-            },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(YaruIcons.minus),
+                onPressed: () async {
+                  await decreaseQuantityFound();
+                },
+              ),
+              IconButton(
+                icon: const Icon(YaruIcons.plus),
+                onPressed: () async {
+                  await increaseQuantityFound();
+                },
+              ),
+            ],
           ),
         ),
       ),
