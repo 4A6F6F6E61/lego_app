@@ -22,7 +22,6 @@ class PartCard extends StatelessWidget {
       await supabase.from('set_parts').update({'quantity_found': 0}).eq('id', part.id);
       return;
     }
-
     await supabase
         .from('set_parts')
         .update({'quantity_found': part.quantityFound + 1})
@@ -31,10 +30,21 @@ class PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finishedColor = Theme.of(context).colorScheme.success.withOpacity(0.38);
-    return YaruBorderContainer(
+    final finishedColor = Theme.of(context).colorScheme.success;
+    final spareColor = Theme.of(context).colorScheme.error;
+    final startedColor = Theme.of(context).colorScheme.warning;
+    final notStartedColor = Theme.of(context).colorScheme.surface;
+
+    return YaruTranslucentContainer(
       clipBehavior: Clip.antiAlias,
-      color: part.isFinished ? finishedColor : null,
+      color: part.isFinished
+          ? finishedColor
+          : part.quantityFound > 0
+          ? startedColor
+          : part.isSpare
+          ? spareColor
+          : notStartedColor,
+      border: Border.all(width: 2),
       child: InkWell(
         onTap: () async {
           await cycleQuantityFound();
@@ -81,6 +91,9 @@ class _PartDetailDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text('Part ID: ${part.id}'),
           Text('Color ID: ${part.colorId}'),
+          Text('Quantity Needed: ${part.quantityNeeded}'),
+          Text('Quantity Found: ${part.quantityFound}'),
+          Text('Is Spare: ${part.isSpare ? "Yes" : "No"}'),
         ],
       ),
       actions: [TextButton(onPressed: context.pop, child: const Text('Close'))],

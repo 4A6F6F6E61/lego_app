@@ -8,6 +8,7 @@ class SetPart {
   final String? imgUrl;
   final int quantityNeeded;
   final int quantityFound;
+  // TODO: Is spare is not working right now.
   final bool isSpare;
 
   bool get isFinished => quantityNeeded <= quantityFound;
