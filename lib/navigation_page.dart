@@ -47,6 +47,7 @@ class _NavigationPageState extends State<NavigationPage> {
                   ],
                   selectedIndex: widget.navShell.currentIndex,
                   onDestinationSelected: (index) => widget.navShell.goBranch(index),
+                  minExtendedWidth: 180,
                   extended: true,
                 ),
                 const VerticalDivider(width: 0.0),
