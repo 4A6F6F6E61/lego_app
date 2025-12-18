@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lego_app/auth_notifier.dart';
 import 'package:lego_app/auth_page.dart';
 import 'package:lego_app/navigation_page.dart';
-import 'package:lego_app/tabs/home_page.dart';
+import 'package:lego_app/tabs/home/home_page.dart';
 import 'package:lego_app/tabs/settings/settings_page.dart';
 
 final router = GoRouter(
@@ -37,7 +37,6 @@ final router = GoRouter(
             GoRoute(
               path: "/home",
               builder: (_, _) {
-                // Return your home page here
                 return HomePage();
               },
             ),
