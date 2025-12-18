@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import '../api_client.dart';
 
 final legoApi = LegoApi();
@@ -111,7 +113,16 @@ class LegoApi {
   //   );
   // }
 
-  // Future<dynamic> setsRead(String setNum) async {
-  //   return apiGet('/api/v3/lego/sets/$setNum/');
-  // }
+  Future<dynamic> getSetParts({
+    required String apiKey,
+    required String setNum,
+    int page = 1,
+  }) async {
+    dev.log("Fetching parts for set $setNum, page $page");
+    return apiGet(
+      apiKey: apiKey,
+      '/api/v3/lego/sets/$setNum/parts/',
+      queryParameters: {'page': page},
+    );
+  }
 }

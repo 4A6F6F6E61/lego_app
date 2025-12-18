@@ -1,8 +1,5 @@
-import 'dart:developer' as dev;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lego_app/api/services/users_api.dart';
 import 'package:lego_app/providers/settings.dart';
 
 class HomePage extends ConsumerWidget {

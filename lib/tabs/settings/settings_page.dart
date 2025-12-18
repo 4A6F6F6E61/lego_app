@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
 import 'package:lego_app/providers/settings.dart';
@@ -18,6 +19,7 @@ class SettingsPage extends HookConsumerWidget {
     final rebrickableAPIKey = ref.watch(rebrickableApiKeyProvider);
 
     final apiKeyTextController = useTextEditingController();
+    final syncLoading = useState(false);
 
     useEffect(() {
       apiKeyTextController.text = rebrickableAPIKey.value ?? '';
@@ -59,8 +61,42 @@ class SettingsPage extends HookConsumerWidget {
                 )
               : YaruSplitButton(
                   menuWidth: _width,
-                  onPressed: () {
-                    // Sync action
+                  onPressed: () async {
+                    if (rebrickableAPIKey.value == null) {
+                      showSnack(context, 'Please enter your Rebrickable API Key first.');
+                      return;
+                    }
+                    syncLoading.value = true;
+                    showSnack(
+                      context,
+                      "Synchronization started... this may take a while, since Rebrickable will rate limit requests after a while.",
+                    );
+                    try {
+                      await syncRebrickable(apiKey: rebrickableAPIKey.value!, userToken: token);
+                    } catch (e) {
+                      if (context.mounted) {
+                        showSnack(context, 'Synchronization failed: $e');
+                        rethrow;
+                      }
+                    } finally {
+                      syncLoading.value = false;
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Synchronization Complete'),
+                              content: const Text(
+                                'Your collection has been synchronized successfully.',
+                              ),
+                              actions: [
+                                TextButton(onPressed: context.pop, child: const Text('OK')),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    }
                   },
                   items: [
                     PopupMenuItem(
@@ -70,7 +106,15 @@ class SettingsPage extends HookConsumerWidget {
                       },
                     ),
                   ],
-                  child: const Text('Sync'),
+                  child: syncLoading.value
+                      ? SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Sync'),
                 ),
           loading: () => const CircularProgressIndicator(),
           error: (err, stack) => const Icon(Icons.error),

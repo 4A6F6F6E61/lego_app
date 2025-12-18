@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:lego_app/api/api_client.dart';
 import 'package:lego_app/api/models/main.dart';
 
@@ -51,6 +53,7 @@ class UsersApi {
     String? ordering,
     String? search,
   }) async {
+    dev.log("Fetching set collection for user $userToken, page $page");
     final response = await apiGet(
       '/api/v3/users/$userToken/sets/',
       apiKey: apiKey,

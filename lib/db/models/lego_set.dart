@@ -5,7 +5,6 @@ class LegoSet {
   final String name;
   final int? year;
   final int? themeId;
-  final int? numParts;
   final String? imgUrl;
   final DateTime createdAt;
 
@@ -16,7 +15,6 @@ class LegoSet {
     required this.name,
     this.year,
     this.themeId,
-    this.numParts,
     this.imgUrl,
     required this.createdAt,
   });
@@ -29,7 +27,6 @@ class LegoSet {
       name: json['name'] as String,
       year: json['year'] as int?,
       themeId: json['theme_id'] as int?,
-      numParts: json['num_parts'] as int?,
       imgUrl: json['img_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -37,13 +34,11 @@ class LegoSet {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'user_id': userId,
       'set_num': setNum,
       'name': name,
       'year': year,
       'theme_id': themeId,
-      'num_parts': numParts,
       'img_url': imgUrl,
       'created_at': createdAt.toIso8601String(),
     };

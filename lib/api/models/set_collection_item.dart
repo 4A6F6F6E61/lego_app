@@ -4,7 +4,7 @@ class SetCollectionItem {
   final int listId;
   final int quantity;
   final bool includeSpares;
-  final LegoSet set;
+  final RebrickableLegoSet set;
 
   SetCollectionItem({
     required this.listId,
@@ -18,7 +18,7 @@ class SetCollectionItem {
       listId: json['list_id'],
       quantity: json['quantity'],
       includeSpares: json['include_spares'],
-      set: LegoSet.fromJson(json['set']),
+      set: RebrickableLegoSet.fromJson(json['set']),
     );
   }
 }

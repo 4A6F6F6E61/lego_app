@@ -1,4 +1,4 @@
-class LegoSet {
+class RebrickableLegoSet {
   final String setNum;
   final String name;
   final int year;
@@ -8,7 +8,7 @@ class LegoSet {
   final String setUrl;
   final DateTime lastModifiedDt;
 
-  LegoSet({
+  RebrickableLegoSet({
     required this.setNum,
     required this.name,
     required this.year,
@@ -19,8 +19,8 @@ class LegoSet {
     required this.lastModifiedDt,
   });
 
-  factory LegoSet.fromJson(Map<String, dynamic> json) {
-    return LegoSet(
+  factory RebrickableLegoSet.fromJson(Map<String, dynamic> json) {
+    return RebrickableLegoSet(
       setNum: json['set_num'],
       name: json['name'],
       year: json['year'],
