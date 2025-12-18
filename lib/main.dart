@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/router.dart';
-import 'package:lego_app/settings.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yaru/yaru.dart';
 
 Future<void> main() async {
@@ -16,9 +17,13 @@ Future<void> main() async {
   SemanticsBinding.instance.ensureSemantics();
 
   await dotenv.load();
-  await Settings.init();
 
-  runApp(const App());
+  await Supabase.initialize(
+    url: 'https://kuselrpmvzwtxmfzukxv.supabase.co',
+    anonKey: 'sb_publishable_Ymuui0DvLloTR2SO4fVfyw_Bw3MHT87',
+  );
+
+  runApp(const ProviderScope(child: App()));
 
   doWhenWindowReady(() {
     appWindow.minSize = Size(150, 100);

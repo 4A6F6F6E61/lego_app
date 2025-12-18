@@ -1,27 +1,28 @@
 import 'dart:developer' as dev;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/api/services/users_api.dart';
-import 'package:lego_app/settings.dart';
+import 'package:lego_app/providers/settings.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userTokenAsync = ref.watch(userTokenProvider);
 
-class _HomePageState extends State<HomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () async {
-          final response = await userApi.getSetCollection();
-          dev.log('Set Collection Count: ${response.count}');
-        },
-        child: const Text('Press Me'),
-      ),
+    return userTokenAsync.when(
+      data: (userToken) {
+        if (userToken == null) {
+          return const Center(child: Text('Not authenticated'));
+        }
+        return Center(
+          child: ElevatedButton(onPressed: () async {}, child: const Text('Press Me')),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
     );
   }
 }

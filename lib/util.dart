@@ -11,3 +11,5 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showSnack(
     ),
   );
 }
+
+Future<void> syncRebrickable({required String apiKey, required String userToken}) async {}

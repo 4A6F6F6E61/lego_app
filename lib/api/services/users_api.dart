@@ -1,18 +1,36 @@
+import 'package:lego_app/api/api_client.dart';
 import 'package:lego_app/api/models/main.dart';
-import 'package:lego_app/settings.dart';
 
-import '../api_client.dart';
-
-final userApi = UsersApi._();
+final userApi = UsersApi();
 
 class UsersApi {
-  UsersApi._();
+  // Future<void> login(String username, String password) async {
+  //   if (username.isEmpty || password.isEmpty) {
+  //     showSnack(context, 'Please enter both username and password');
+  //     return;
+  //   }
+  //   try {
+  //     final token = await userApi.tokenCreate(username.text, password.text);
+  //     await ref.read(userTokenProvider.notifier).set(token);
+  //     if (context.mounted) {
+  //       context.go('/home');
+  //     }
+  //   } catch (e) {
+  //     if (context.mounted) {
+  //       showSnack(context, 'Login failed: $e');
+  //     }
+  //     return;
+  //   }
+  // }
 
-  final ApiClient _apiClient = ApiClient();
-
-  Future<String> tokenCreate(String username, String password) async {
-    final response = await _apiClient.post(
+  Future<String> tokenCreate({
+    required String apiKey,
+    required String username,
+    required String password,
+  }) async {
+    final response = await apiPost(
       '/api/v3/users/_token/',
+      apiKey: apiKey,
       body: {'username': username, 'password': password},
       form: true,
     );
@@ -20,19 +38,22 @@ class UsersApi {
   }
 
   Future<SetCollectionResponse> getSetCollection({
+    required String userToken,
+    required String apiKey,
     int? page,
     int? pageSize,
     String? setNum,
     num? themeId,
     num? minYear,
     num? maxYear,
-    num? minParts,
-    num? maxParts,
+    int? minParts,
+    int? maxParts,
     String? ordering,
     String? search,
   }) async {
-    final response = await _apiClient.get(
-      '/api/v3/users/${Settings.userToken}/sets/',
+    final response = await apiGet(
+      '/api/v3/users/$userToken/sets/',
+      apiKey: apiKey,
       queryParameters: {
         'page': page,
         'page_size': pageSize,
@@ -48,122 +69,4 @@ class UsersApi {
     );
     return SetCollectionResponse.fromJson(response);
   }
-
-  // Future<dynamic> badgesList({int? page, int? pageSize, String? ordering}) async {
-  //   return _apiClient.get(
-  //     '/api/v3/users/badges/',
-  //     queryParameters: {'page': page, 'page_size': pageSize, 'ordering': ordering},
-  //   );
-  // }
-
-  // Future<dynamic> badgesRead(String id, {String? ordering}) async {
-  //   return _apiClient.get('/api/v3/users/badges/$id/', queryParameters: {'ordering': ordering});
-  // }
-
-  // Future<dynamic> profileRead(String userToken) async {
-  //   return _apiClient.get('/api/v3/users/$userToken/profile/');
-  // }
-  // Future<dynamic> setsCreate(
-  //   String userToken,
-  //   String setNum, {
-  //   int? quantity,
-  //   bool? includeSpares,
-  // }) async {
-  //   return _apiClient.post(
-  //     '/api/v3/users/$userToken/sets/',
-  //     body: {'set_num': setNum, 'quantity': quantity, 'include_spares': includeSpares},
-  //     form: true,
-  //   );
-  // }
-
-  // Future<dynamic> partlistsList(String userToken, {int? page, int? pageSize}) async {
-  //   return _apiClient.get(
-  //     '/api/v3/users/$userToken/partlists/',
-  //     queryParameters: {'page': page, 'page_size': pageSize},
-  //   );
-  // }
-
-  // Future<dynamic> partlistsCreate(
-  //   String userToken,
-  //   String name, {
-  //   bool? isBuildable,
-  //   int? numParts,
-  // }) async {
-  //   return _apiClient.post(
-  //     '/api/v3/users/$userToken/partlists/',
-  //     body: {'name': name, 'is_buildable': isBuildable, 'num_parts': numParts},
-  //     form: true,
-  //   );
-  // }
-
-  // Future<dynamic> partlistsPartsList(
-  //   String userToken,
-  //   String listId, {
-  //   int? page,
-  //   int? pageSize,
-  //   String? ordering,
-  // }) async {
-  //   return _apiClient.get(
-  //     '/api/v3/users/$userToken/partlists/$listId/parts/',
-  //     queryParameters: {'page': page, 'page_size': pageSize, 'ordering': ordering},
-  //   );
-  // }
-
-  // Future<dynamic> partlistsPartsCreate(
-  //   String userToken,
-  //   String listId, {
-  //   required String partNum,
-  //   required int quantity,
-  //   required int colorId,
-  // }) async {
-  //   return _apiClient.post(
-  //     '/api/v3/users/$userToken/partlists/$listId/parts/',
-  //     body: {'part_num': partNum, 'quantity': quantity, 'color_id': colorId},
-  //     form: true,
-  //   );
-  // }
-
-  // Future<dynamic> lostPartsList(
-  //   String userToken, {
-  //   int? page,
-  //   int? pageSize,
-  //   String? ordering,
-  // }) async {
-  //   return _apiClient.get(
-  //     '/api/v3/users/$userToken/lost_parts/',
-  //     queryParameters: {'page': page, 'page_size': pageSize, 'ordering': ordering},
-  //   );
-  // }
-
-  // Future<dynamic> lostPartsCreate(
-  //   String userToken, {
-  //   int? lostQuantity,
-  //   required int invPartId,
-  // }) async {
-  //   return _apiClient.post(
-  //     '/api/v3/users/$userToken/lost_parts/',
-  //     body: {'lost_quantity': lostQuantity, 'inv_part_id': invPartId},
-  //     form: true,
-  //   );
-  // }
-
-  // Future<dynamic> allpartsList(
-  //   String userToken, {
-  //   int? page,
-  //   int? pageSize,
-  //   String? partNum,
-  //   int? partCatId,
-  //   int? colorId,
-  // }) async {
-  //   return _apiClient.get(
-  //     '/api/v3/users/$userToken/allparts/',
-  //     queryParameters: {
-  //       'page': page,
-  //       'page_size': pageSize,
-  //       'part_num': partNum,
-  //       'part_cat_id': partCatId,
-  //       'color_id': colorId,
-  //     },
-  //   );
-  // }
 }

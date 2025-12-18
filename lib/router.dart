@@ -1,29 +1,30 @@
 import 'package:go_router/go_router.dart';
+import 'package:lego_app/auth_notifier.dart';
 import 'package:lego_app/auth_page.dart';
 import 'package:lego_app/navigation_page.dart';
-import 'package:lego_app/settings.dart';
 import 'package:lego_app/tabs/home_page.dart';
-import 'package:lego_app/tabs/settings_page.dart';
+import 'package:lego_app/tabs/settings/settings_page.dart';
 
 final router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/auth',
+  refreshListenable: authNotifier,
+  redirect: (context, state) {
+    final isLoggedIn = authNotifier.isLoggedIn;
+    final isAuthRoute = state.uri.path == '/auth';
+
+    if (!isLoggedIn && !isAuthRoute) {
+      return '/auth';
+    }
+    if (isLoggedIn && isAuthRoute) {
+      return '/home';
+    }
+    return null;
+  },
   routes: [
-    GoRoute(
-      path: "/",
-      redirect: (_, state) async {
-        if (Settings.userToken == null) {
-          return "/auth";
-        }
-        if (state.fullPath == '/') {
-          return '/home';
-        }
-        return null;
-      },
-    ),
     GoRoute(
       path: "/auth",
       builder: (_, _) {
-        return AuthPage();
+        return const AuthPage();
       },
     ),
     StatefulShellRoute.indexedStack(
