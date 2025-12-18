@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/lego_set.dart';
+import 'package:lego_app/db/models/set_part.dart';
 
 final setsProvider = StreamProvider<List<LegoSet>>((ref) {
   if (auth.currentUser == null) return Stream.value([]);
@@ -8,7 +9,17 @@ final setsProvider = StreamProvider<List<LegoSet>>((ref) {
   return supabase
       .from('sets')
       .stream(primaryKey: ['id'])
-      .eq('user_id', auth.currentUser!.id)
       .order('set_num', ascending: true)
       .map((data) => data.map((json) => LegoSet.fromJson(json)).toList());
+});
+
+final setPartsProvider = StreamProvider.family<List<SetPart>, String>((ref, setId) {
+  if (auth.currentUser == null) return Stream.value([]);
+
+  return supabase
+      .from('set_parts')
+      .stream(primaryKey: ['id'])
+      .eq('set_id', setId)
+      .order('part_num', ascending: true)
+      .map((data) => data.map((json) => SetPart.fromJson(json)).toList());
 });

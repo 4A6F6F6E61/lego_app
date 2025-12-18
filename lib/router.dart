@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lego_app/auth_notifier.dart';
 import 'package:lego_app/auth_page.dart';
 import 'package:lego_app/navigation_page.dart';
+import 'package:lego_app/tabs/home/details/details_page.dart';
 import 'package:lego_app/tabs/home/home_page.dart';
 import 'package:lego_app/tabs/settings/settings_page.dart';
 
@@ -39,6 +40,16 @@ final router = GoRouter(
               builder: (_, _) {
                 return HomePage();
               },
+              routes: [
+                GoRoute(
+                  path: "details/:setId",
+                  builder: (_, state) {
+                    final setId = state.pathParameters['setId']!;
+
+                    return DetailsPage(setId: setId);
+                  },
+                ),
+              ],
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 
 class SetCard extends StatelessWidget {
@@ -8,9 +9,12 @@ class SetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      child: Card(
-        clipBehavior: Clip.antiAlias,
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          context.go('/home/details/${set.id}');
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

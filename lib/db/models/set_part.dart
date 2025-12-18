@@ -1,5 +1,3 @@
-import 'package:lego_app/db/db.dart';
-
 class SetPart {
   final int id;
   final String setId;
@@ -11,6 +9,8 @@ class SetPart {
   final int quantityNeeded;
   final int quantityFound;
   final bool isSpare;
+
+  bool get isFinished => quantityNeeded <= quantityFound;
 
   SetPart({
     required this.id,
@@ -39,33 +39,7 @@ class SetPart {
       isSpare: json['is_spare'] as bool,
     );
   }
-  /* {
-      "id": 152135,
-      "inv_part_id": 152135,
-      "part": {
-        "part_num": "99781",
-        "name": "Bracket 1 x 2 - 1 x 2",
-        "part_cat_id": 9,
-        "part_url": "https://rebrickable.com/parts/99781/bracket-1-x-2-1-x-2/",
-        "part_img_url": "https://cdn.rebrickable.com/media/parts/elements/6016172.jpg",
-        "external_ids": {
-          "BrickLink": [
-            "99781"
-          ],
-          "BrickOwl": [
-            "151397"
-          ],
-          "Brickset": [
-            "99781"
-          ],
-          "LDraw": [
-            "99781"
-          ],
-          "LEGO": [
-            "99781"
-          ]
-        }
-      }, */
+
   factory SetPart.fromApiData(
     Map<String, dynamic> data, {
     required String setId,

@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/providers/db_providers.dart';
-import 'package:lego_app/tabs/home/set_card.dart';
+import 'package:lego_app/tabs/home/details/part_card.dart';
 import 'package:yaru/yaru.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class DetailsPage extends ConsumerWidget {
+  const DetailsPage({super.key, required this.setId});
+
+  final String setId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final setsAsync = ref.watch(setsProvider);
-
+    final partsAsync = ref.watch(setPartsProvider(setId));
     return Scaffold(
-      body: setsAsync.when(
-        data: (sets) {
-          if (sets.isEmpty) {
-            return const Center(child: Text('No sets in collection'));
+      appBar: AppBar(title: Text('Set Details: $setId')),
+      body: partsAsync.when(
+        data: (parts) {
+          if (parts.isEmpty) {
+            return const Center(child: Text('No parts found for this set'));
           }
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -28,15 +30,15 @@ class HomePage extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
-                      childAspectRatio: 16 / 10,
+                      childAspectRatio: 16 / 3,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
                     controller: controller,
-                    itemCount: sets.length,
+                    itemCount: parts.length,
                     itemBuilder: (context, index) {
-                      final set = sets[index];
-                      return SetCard(set: set);
+                      final part = parts[index];
+                      return PartCard(part: part);
                     },
                   );
                 },
