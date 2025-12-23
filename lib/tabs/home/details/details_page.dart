@@ -13,7 +13,7 @@ class DetailsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final partsAsync = ref.watch(setPartsProvider(setId));
     return Scaffold(
-      appBar: AppBar(title: Text('Set Details: $setId')),
+      appBar: AppBar(title: Text('Set Details: ${setId}')),
       body: partsAsync.when(
         data: (parts) {
           if (parts.isEmpty) {

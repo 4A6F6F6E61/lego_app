@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/models/lego_set.dart';
+import 'package:lego_app/util.dart';
 
 class SetCard extends StatelessWidget {
   const SetCard({super.key, required this.set});
@@ -21,7 +22,7 @@ class SetCard extends StatelessWidget {
             Expanded(
               child: set.imgUrl != null
                   ? CachedNetworkImage(
-                      imageUrl: set.imgUrl!,
+                      imageUrl: proxiedImageUrl(set.imgUrl!),
                       fit: BoxFit.cover,
                       placeholder: (context, url) =>
                           const Center(child: CircularProgressIndicator()),

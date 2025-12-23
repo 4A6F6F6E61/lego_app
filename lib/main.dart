@@ -4,7 +4,6 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,8 +14,6 @@ Future<void> main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   SemanticsBinding.instance.ensureSemantics();
-
-  await dotenv.load();
 
   await Supabase.initialize(
     url: 'https://kuselrpmvzwtxmfzukxv.supabase.co',
@@ -87,6 +84,30 @@ class _App extends StatelessWidget {
       highContrastTheme: highContrastDarkTheme,
       highContrastDarkTheme: highContrastDarkTheme,
       routerConfig: router,
+      builder: (context, child) {
+        // Add fake safe area padding on desktop platforms and web
+        final existingMediaQuery = MediaQuery.of(context);
+        if (kIsWeb) {
+          return MediaQuery(
+            data: existingMediaQuery.copyWith(
+              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
+            ),
+            child: child ?? const SizedBox(),
+          );
+        }
+        if (defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.fuchsia) {
+          return MediaQuery(
+            data: existingMediaQuery.copyWith(
+              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 34.0),
+            ),
+            child: child ?? const SizedBox(),
+          );
+        }
+        return child ?? const SizedBox();
+      },
     );
   }
 }

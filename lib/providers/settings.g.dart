@@ -33,7 +33,7 @@ final class UserTokenProvider
   UserToken create() => UserToken();
 }
 
-String _$userTokenHash() => r'7fa9cdc9830491a61aa8af972f020eb4670edb91';
+String _$userTokenHash() => r'e82f34a8c436843111e4b0dcf04c6f8f9fc82e3b';
 
 abstract class _$UserToken extends $AsyncNotifier<String?> {
   FutureOr<String?> build();
@@ -78,9 +78,54 @@ final class RebrickableApiKeyProvider
   RebrickableApiKey create() => RebrickableApiKey();
 }
 
-String _$rebrickableApiKeyHash() => r'6e542d123ed3e672be53a09b7e9121b7df2b2c0f';
+String _$rebrickableApiKeyHash() => r'70f65ff0311054cc2213d188bb50fc15d9b9e503';
 
 abstract class _$RebrickableApiKey extends $AsyncNotifier<String?> {
+  FutureOr<String?> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<String?>, String?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<String?>, String?>,
+              AsyncValue<String?>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
+@ProviderFor(BricksetApiKey)
+const bricksetApiKeyProvider = BricksetApiKeyProvider._();
+
+final class BricksetApiKeyProvider
+    extends $AsyncNotifierProvider<BricksetApiKey, String?> {
+  const BricksetApiKeyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'bricksetApiKeyProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$bricksetApiKeyHash();
+
+  @$internal
+  @override
+  BricksetApiKey create() => BricksetApiKey();
+}
+
+String _$bricksetApiKeyHash() => r'd9512e4e57f8b9a78e05f7ca61e2b75fd8538008';
+
+abstract class _$BricksetApiKey extends $AsyncNotifier<String?> {
   FutureOr<String?> build();
   @$mustCallSuper
   @override

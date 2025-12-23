@@ -1,14 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-
-const String _basePath = 'https://rebrickable.com';
 
 final _httpClient = http.Client();
 
-Uri _buildUri(String path, [Map<String, dynamic>? queryParams]) {
-  final uri = Uri.parse(_basePath);
+Uri _buildUri(String basePath, String path, [Map<String, dynamic>? queryParams]) {
+  final uri = Uri.parse(basePath);
   final newPath = uri.path.endsWith('/')
       ? '${uri.path}${path.replaceFirst('/', '')}'
       : '${uri.path}$path';
@@ -26,10 +23,10 @@ Map<String, String>? _encodeQuery(Map<String, dynamic>? qp) {
   return out;
 }
 
-Map<String, String> _defaultHeaders(String apiKey, [Map<String, String>? extra]) {
+Map<String, String> _defaultHeaders(String? authHeaderKey, [Map<String, String>? extra]) {
   final headers = <String, String>{'Accept': 'application/json'};
-  if (apiKey.isNotEmpty) {
-    headers['Authorization'] = 'key $apiKey';
+  if (authHeaderKey != null && authHeaderKey.isNotEmpty) {
+    headers['Authorization'] = 'key $authHeaderKey';
   }
   if (extra != null) headers.addAll(extra);
   return headers;
@@ -56,26 +53,28 @@ String _formEncode(Map m) => m.entries
     .join('&');
 
 Future<dynamic> apiGet(
+  String basePath,
   String path, {
-  required String apiKey,
+  String? authHeaderKey,
   Map<String, dynamic>? queryParameters,
   Map<String, String>? headers,
 }) async {
-  final uri = _buildUri(path, queryParameters);
-  final resp = await _httpClient.get(uri, headers: _defaultHeaders(apiKey, headers));
+  final uri = _buildUri(basePath, path, queryParameters);
+  final resp = await _httpClient.get(uri, headers: _defaultHeaders(authHeaderKey, headers));
   return _decodeResponse(resp);
 }
 
 Future<dynamic> apiPost(
+  String basePath,
   String path, {
-  required String apiKey,
+  required String authHeaderKey,
   Map<String, dynamic>? queryParameters,
   Map<String, String>? headers,
   Object? body,
   bool form = false,
 }) async {
-  final uri = _buildUri(path, queryParameters);
-  final h = _defaultHeaders(apiKey, headers);
+  final uri = _buildUri(basePath, path, queryParameters);
+  final h = _defaultHeaders(authHeaderKey, headers);
   Object? payload = body;
   if (form) {
     h['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -91,15 +90,16 @@ Future<dynamic> apiPost(
 }
 
 Future<dynamic> apiPut(
+  String basePath,
   String path, {
-  required String apiKey,
+  required String authHeaderKey,
   Map<String, dynamic>? queryParameters,
   Map<String, String>? headers,
   Object? body,
   bool form = false,
 }) async {
-  final uri = _buildUri(path, queryParameters);
-  final h = _defaultHeaders(apiKey, headers);
+  final uri = _buildUri(basePath, path, queryParameters);
+  final h = _defaultHeaders(authHeaderKey, headers);
   Object? payload = body;
   if (form) {
     h['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -115,13 +115,14 @@ Future<dynamic> apiPut(
 }
 
 Future<dynamic> apiDelete(
+  String basePath,
   String path, {
-  required String apiKey,
+  required String authHeaderKey,
   Map<String, dynamic>? queryParameters,
   Map<String, String>? headers,
 }) async {
-  final uri = _buildUri(path, queryParameters);
-  final resp = await _httpClient.delete(uri, headers: _defaultHeaders(apiKey, headers));
+  final uri = _buildUri(basePath, path, queryParameters);
+  final resp = await _httpClient.delete(uri, headers: _defaultHeaders(authHeaderKey, headers));
   return _decodeResponse(resp);
 }
 

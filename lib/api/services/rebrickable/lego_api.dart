@@ -1,10 +1,26 @@
 import 'dart:developer' as dev;
 
-import '../api_client.dart';
+import 'package:lego_app/api/services/rebrickable/common.dart';
 
-final legoApi = LegoApi();
+import '../../api_client.dart';
+
+final legoApi = LegoApi._();
 
 class LegoApi {
+  const LegoApi._();
+  Future<dynamic> getSetParts({
+    required String apiKey,
+    required String setNum,
+    int page = 1,
+  }) async {
+    dev.log("Fetching parts for set $setNum, page $page");
+    return apiGet(
+      rebrickableApiPath,
+      '/lego/sets/$setNum/parts/',
+      authHeaderKey: apiKey,
+      queryParameters: {'page': page},
+    );
+  }
   // Future<dynamic> colorsList({int? page, int? pageSize, String? ordering}) async {
   //   return apiGet(
   //     '/api/v3/lego/colors/',
@@ -112,17 +128,4 @@ class LegoApi {
   //     },
   //   );
   // }
-
-  Future<dynamic> getSetParts({
-    required String apiKey,
-    required String setNum,
-    int page = 1,
-  }) async {
-    dev.log("Fetching parts for set $setNum, page $page");
-    return apiGet(
-      apiKey: apiKey,
-      '/api/v3/lego/sets/$setNum/parts/',
-      queryParameters: {'page': page},
-    );
-  }
 }

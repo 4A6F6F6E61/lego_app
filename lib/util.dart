@@ -1,4 +1,5 @@
 import 'dart:developer' as dev;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lego_app/api.dart';
 import 'package:lego_app/db/db.dart';
@@ -116,4 +117,11 @@ Future<void> syncSetParts({
       break;
     }
   }
+}
+
+String proxiedImageUrl(String url) {
+  if (kIsWeb) {
+    return 'https://corsproxy.io/?${Uri.encodeComponent(url)}';
+  }
+  return url;
 }

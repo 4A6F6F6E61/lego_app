@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yaru/yaru.dart';
@@ -27,7 +28,7 @@ class _NavigationPageState extends State<NavigationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: YaruWindowTitleBar(title: const Text('Lego App')),
+      appBar: kIsWeb ? null : YaruWindowTitleBar(title: const Text('Lego App')),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) {

@@ -2,37 +2,21 @@ import 'dart:developer' as dev;
 
 import 'package:lego_app/api/api_client.dart';
 import 'package:lego_app/api/models/main.dart';
+import 'package:lego_app/api/services/rebrickable/common.dart';
 
-final userApi = UsersApi();
+final userApi = UsersApi._();
 
 class UsersApi {
-  // Future<void> login(String username, String password) async {
-  //   if (username.isEmpty || password.isEmpty) {
-  //     showSnack(context, 'Please enter both username and password');
-  //     return;
-  //   }
-  //   try {
-  //     final token = await userApi.tokenCreate(username.text, password.text);
-  //     await ref.read(userTokenProvider.notifier).set(token);
-  //     if (context.mounted) {
-  //       context.go('/home');
-  //     }
-  //   } catch (e) {
-  //     if (context.mounted) {
-  //       showSnack(context, 'Login failed: $e');
-  //     }
-  //     return;
-  //   }
-  // }
-
+  const UsersApi._();
   Future<String> tokenCreate({
     required String apiKey,
     required String username,
     required String password,
   }) async {
     final response = await apiPost(
-      '/api/v3/users/_token/',
-      apiKey: apiKey,
+      rebrickableApiPath,
+      '/users/_token/',
+      authHeaderKey: apiKey,
       body: {'username': username, 'password': password},
       form: true,
     );
@@ -55,8 +39,9 @@ class UsersApi {
   }) async {
     dev.log("Fetching set collection for user $userToken, page $page");
     final response = await apiGet(
-      '/api/v3/users/$userToken/sets/',
-      apiKey: apiKey,
+      rebrickableApiPath,
+      '/users/$userToken/sets/',
+      authHeaderKey: apiKey,
       queryParameters: {
         'page': page,
         'page_size': pageSize,

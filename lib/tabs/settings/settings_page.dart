@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
+import 'package:lego_app/api/services/brickset/api.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/settings/login_modal.dart';
 import 'package:lego_app/util.dart';
@@ -17,14 +18,18 @@ class SettingsPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userTokenAsync = ref.watch(userTokenProvider);
     final rebrickableAPIKey = ref.watch(rebrickableApiKeyProvider);
+    final bricksetAPIKey = ref.watch(bricksetApiKeyProvider);
 
-    final apiKeyTextController = useTextEditingController();
+    final rbApiKeyTC = useTextEditingController();
+    final bsApiKeyTC = useTextEditingController();
+
     final syncLoading = useState(false);
 
     useEffect(() {
-      apiKeyTextController.text = rebrickableAPIKey.value ?? '';
+      rbApiKeyTC.text = rebrickableAPIKey.value ?? '';
+      bsApiKeyTC.text = bricksetAPIKey.value ?? '';
       return null;
-    }, [rebrickableAPIKey]);
+    }, [rebrickableAPIKey, bricksetAPIKey]);
 
     const contentWidth = 700.0;
     final tiles = [
@@ -125,7 +130,7 @@ class SettingsPage extends HookConsumerWidget {
         subtitle: const Text('Your Rebrickable API Key for accessing the API'),
         trailing: Expanded(
           child: TextFormField(
-            controller: apiKeyTextController,
+            controller: rbApiKeyTC,
             decoration: const InputDecoration(hintText: 'Enter your Rebrickable API Key'),
             obscureText: true,
             onFieldSubmitted: (value) async {
@@ -133,6 +138,27 @@ class SettingsPage extends HookConsumerWidget {
             },
           ),
         ),
+      ),
+      YaruTile(
+        title: const Text('Brickset API Key'),
+        subtitle: const Text('Your Brickset API Key for accessing the API'),
+        trailing: Expanded(
+          child: TextFormField(
+            controller: bsApiKeyTC,
+            decoration: const InputDecoration(hintText: 'Enter your Brickset API Key'),
+            obscureText: true,
+            onFieldSubmitted: (value) async {
+              await ref.read(bricksetApiKeyProvider.notifier).set(value);
+            },
+          ),
+        ),
+      ),
+      ElevatedButton(
+        onPressed: () async {
+          final res = await bricksetApi.getInstructions2(bricksetAPIKey.value!, '75192-1');
+          showSnack(context, res);
+        },
+        child: const Text('Test'),
       ),
     ];
     return Scaffold(
