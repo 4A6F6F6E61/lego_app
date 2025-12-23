@@ -91,6 +91,8 @@ class _App extends StatelessWidget {
           return MediaQuery(
             data: existingMediaQuery.copyWith(
               viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
+              padding: existingMediaQuery.padding.copyWith(bottom: 24.0),
+              textScaleFactor: 0.85,
             ),
             child: child ?? const SizedBox(),
           );

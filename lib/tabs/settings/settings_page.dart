@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
-import 'package:lego_app/api/services/brickset/api.dart';
+import 'package:lego_app/db/db.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/settings/login_modal.dart';
 import 'package:lego_app/util.dart';
@@ -30,6 +30,30 @@ class SettingsPage extends HookConsumerWidget {
       bsApiKeyTC.text = bricksetAPIKey.value ?? '';
       return null;
     }, [rebrickableAPIKey, bricksetAPIKey]);
+
+    void signOut() async {
+      showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialog(
+            title: const Text('Sign out'),
+            content: const Text('Are you sure you want to sign out?'),
+            actions: [
+              TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  await supabase.auth.signOut();
+                  if (context.mounted) {
+                    context.pop();
+                  }
+                },
+                child: const Text('Sign out'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
     const contentWidth = 700.0;
     final tiles = [
@@ -153,13 +177,6 @@ class SettingsPage extends HookConsumerWidget {
           ),
         ),
       ),
-      ElevatedButton(
-        onPressed: () async {
-          final res = await bricksetApi.getInstructions2(bricksetAPIKey.value!, '75192-1');
-          showSnack(context, res);
-        },
-        child: const Text('Test'),
-      ),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -180,6 +197,10 @@ class SettingsPage extends HookConsumerWidget {
                       index != tiles.length - 1 ? const Divider() : const SizedBox.shrink(),
                 ),
               ),
+            ),
+            SizedBox(
+              width: 200,
+              child: ElevatedButton(onPressed: signOut, child: const Text('Sign out')),
             ),
           ],
         ),

@@ -1,7 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lego_app/api.dart';
 import 'package:lego_app/providers/db_providers.dart';
+import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/home/details/part_card.dart';
+import 'package:lego_app/util.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:yaru/yaru.dart';
 
 class DetailsPage extends ConsumerWidget {
@@ -11,43 +16,108 @@ class DetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final setAsync = ref.watch(setProvider(setId));
     final partsAsync = ref.watch(setPartsProvider(setId));
-    return Scaffold(
-      appBar: AppBar(title: Text('Set Details: ${setId}')),
-      body: partsAsync.when(
-        data: (parts) {
-          if (parts.isEmpty) {
-            return const Center(child: Text('No parts found for this set'));
-          }
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final crossAxisCount = width < 600 ? 1 : (width / 300).floor().clamp(2, 6);
+    final bricksetApiKey = ref.watch(bricksetApiKeyProvider);
 
-              return YaruScrollViewUndershoot.builder(
-                builder: (context, controller) {
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: 16 / 3,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    controller: controller,
-                    itemCount: parts.length,
-                    itemBuilder: (context, index) {
-                      final part = parts[index];
-                      return PartCard(part: part);
-                    },
-                  );
-                },
-              );
-            },
+    return Scaffold(
+      appBar: AppBar(title: const Text('Set Details')),
+      body: setAsync.when(
+        data: (set) {
+          if (set == null) return const Center(child: Text('Set not found'));
+          return Column(
+            children: [
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      if (set.imgUrl != null)
+                        CachedNetworkImage(
+                          imageUrl: proxiedImageUrl(set.imgUrl!),
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(set.name, style: Theme.of(context).textTheme.headlineSmall),
+                            Text('Set: ${set.setNum}'),
+                            Text('Year: ${set.year ?? "Unknown"}'),
+                            Text('Parts: ${partsAsync.value?.length ?? "Unknown"}'),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final key = bricksetApiKey.value;
+                          if (key == null || key.isEmpty) {
+                            showSnack(context, 'Please set Brickset API Key in settings');
+                            return;
+                          }
+                          try {
+                            final url = await bricksetApi.getInstructions2(key, set.setNum);
+
+                            launchUrl(Uri.parse(url));
+                          } catch (e) {
+                            if (context.mounted) {
+                              showSnack(context, 'Error: $e');
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.menu_book),
+                        label: const Text('Instructions'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: partsAsync.when(
+                  data: (parts) {
+                    if (parts.isEmpty) {
+                      return const Center(child: Text('No parts found for this set'));
+                    }
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final crossAxisCount = width < 600 ? 1 : (width / 300).floor().clamp(2, 6);
+
+                        return YaruScrollViewUndershoot.builder(
+                          builder: (context, controller) {
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: 16 / 3,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                              controller: controller,
+                              itemCount: parts.length,
+                              itemBuilder: (context, index) {
+                                final part = parts[index];
+                                return PartCard(part: part);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Error loading parts: $error')),
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        error: (error, stack) => Center(child: Text('Error loading set: $error')),
       ),
     );
   }

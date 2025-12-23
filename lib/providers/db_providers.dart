@@ -23,3 +23,13 @@ final setPartsProvider = StreamProvider.family<List<SetPart>, String>((ref, setI
       .order('part_num', ascending: true)
       .map((data) => data.map((json) => SetPart.fromJson(json)).toList());
 });
+
+final setProvider = StreamProvider.family<LegoSet?, String>((ref, setId) {
+  if (auth.currentUser == null) return Stream.value(null);
+
+  return supabase
+      .from('sets')
+      .stream(primaryKey: ['id'])
+      .eq('id', setId)
+      .map((data) => data.isNotEmpty ? LegoSet.fromJson(data.first) : null);
+});
