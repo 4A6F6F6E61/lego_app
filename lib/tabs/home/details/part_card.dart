@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:lego_app/tabs/home/details/part_detail_dialog.dart';
 import 'package:lego_app/util.dart';
 import 'package:yaru/yaru.dart';
 
@@ -15,7 +16,7 @@ class PartCard extends HookWidget {
   Future<void> showPartDetails(BuildContext context) async {
     await showDialog(
       context: context,
-      builder: (context) => _PartDetailDialog(part: part),
+      builder: (context) => PartDetailDialog(part: part),
     );
   }
 
@@ -117,35 +118,6 @@ class PartCard extends HookWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PartDetailDialog extends StatelessWidget {
-  const _PartDetailDialog({required this.part});
-  final SetPart part;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text("Part Details"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          part.imgUrl != null
-              ? CachedNetworkImage(imageUrl: proxiedImageUrl(part.imgUrl!))
-              : const Icon(Icons.extension, size: 100),
-          const SizedBox(height: 16),
-          Text(part.name ?? 'Unknown Part', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text('Part ID: ${part.id}'),
-          Text('Color ID: ${part.colorId}'),
-          Text('Quantity Needed: ${part.quantityNeeded}'),
-          Text('Quantity Found: ${part.quantityFound}'),
-          Text('Is Spare: ${part.isSpare ? "Yes" : "No"}'),
-        ],
-      ),
-      actions: [TextButton(onPressed: context.pop, child: const Text('Close'))],
     );
   }
 }

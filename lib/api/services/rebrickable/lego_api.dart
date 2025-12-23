@@ -21,12 +21,20 @@ class LegoApi {
       queryParameters: {'page': page},
     );
   }
-  // Future<dynamic> colorsList({int? page, int? pageSize, String? ordering}) async {
-  //   return apiGet(
-  //     '/api/v3/lego/colors/',
-  //     queryParameters: {'page': page, 'page_size': pageSize, 'ordering': ordering},
-  //   );
-  // }
+
+  Future<dynamic> colorsList({
+    required String apiKey,
+    int? page,
+    int? pageSize,
+    String? ordering,
+  }) async {
+    return apiGet(
+      rebrickableApiPath,
+      '/lego/colors/',
+      authHeaderKey: apiKey,
+      queryParameters: {'page': page, 'page_size': pageSize, 'ordering': ordering},
+    );
+  }
 
   // Future<dynamic> colorsRead(String id, {String? ordering}) async {
   //   return apiGet('/api/v3/lego/colors/$id/', queryParameters: {'ordering': ordering});
