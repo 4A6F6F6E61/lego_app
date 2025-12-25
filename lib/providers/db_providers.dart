@@ -21,6 +21,7 @@ final setPartsProvider = StreamProvider.family<List<SetPart>, String>((ref, setI
       .stream(primaryKey: ['id'])
       .eq('set_id', setId)
       .order('part_num', ascending: true)
+      .order('color_id', ascending: true)
       .map((data) => data.map((json) => SetPart.fromJson(json)).toList());
 });
 
