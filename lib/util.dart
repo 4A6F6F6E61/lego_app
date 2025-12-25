@@ -53,6 +53,7 @@ Future<void> syncRebrickable({required String apiKey, required String userToken}
         themeId: set.themeId,
         imgUrl: set.setImgUrl,
         createdAt: DateTime.now(),
+        status: LegoSetStatus.backlog,
       );
       final id = await supabase
           .from('sets')
