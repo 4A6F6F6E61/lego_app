@@ -34,3 +34,7 @@ final setProvider = StreamProvider.family<LegoSet?, String>((ref, setId) {
       .eq('id', setId)
       .map((data) => data.isNotEmpty ? LegoSet.fromJson(data.first) : null);
 });
+
+Future<void> updateSetStatus(String setId, LegoSetStatus status) async {
+  await supabase.from('sets').update({'status': status.index}).eq('id', setId);
+}

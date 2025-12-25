@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/tabs/home/set_card.dart';
 import 'package:yaru/yaru.dart';
@@ -17,6 +18,11 @@ class HomePage extends ConsumerWidget {
           if (sets.isEmpty) {
             return const Center(child: Text('No sets in collection'));
           }
+
+          final backlog = sets.where((s) => s.status == LegoSetStatus.backlog).toList();
+          final building = sets.where((s) => s.status == LegoSetStatus.currentlyBuilding).toList();
+          final built = sets.where((s) => s.status == LegoSetStatus.built).toList();
+
           return LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
@@ -24,20 +30,89 @@ class HomePage extends ConsumerWidget {
 
               return YaruScrollViewUndershoot.builder(
                 builder: (context, controller) {
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: 16 / 10,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
+                  return CustomScrollView(
                     controller: controller,
-                    itemCount: sets.length,
-                    itemBuilder: (context, index) {
-                      final set = sets[index];
-                      return SetCard(set: set);
-                    },
+                    slivers: [
+                      if (building.isNotEmpty) ...[
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              'Currently Building',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 16 / 10,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => SetCard(set: building[index]),
+                              childCount: building.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (backlog.isNotEmpty) ...[
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              'Backlog',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 16 / 10,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => SetCard(set: backlog[index]),
+                              childCount: backlog.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (built.isNotEmpty) ...[
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              'Built',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 16 / 10,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => SetCard(set: built[index]),
+                              childCount: built.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+                    ],
                   );
                 },
               );

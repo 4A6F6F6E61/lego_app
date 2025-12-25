@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/util.dart';
+import 'package:yaru/yaru.dart';
 
 class SetCard extends StatelessWidget {
   const SetCard({super.key, required this.set});
@@ -10,8 +11,24 @@ class SetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    Color cardColor = () {
+      switch (set.status) {
+        case LegoSetStatus.built:
+          return Theme.of(context).colorScheme.success;
+        case LegoSetStatus.currentlyBuilding:
+          return Theme.of(context).colorScheme.warning;
+        case LegoSetStatus.backlog:
+          return Theme.of(context).colorScheme.primaryContainer;
+      }
+    }();
+
+    return Container(
       clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: cardColor.withAlpha(50),
+        border: Border.all(color: cardColor, width: 1),
+      ),
       child: InkWell(
         onTap: () {
           context.go('/home/details/${set.id}');
@@ -47,9 +64,9 @@ class SetCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     set.setNum,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
                   ),
                 ],
               ),

@@ -1,7 +1,7 @@
 name: lego_app
-description: "A new Flutter project."
+description: "A cross-platform LEGO set rebuilding application."
 publish_to: 'none'
-version: 0.1.4
+version: 0.1.5
 
 environment:
   sdk: ^3.10.3
@@ -12,7 +12,7 @@ dependencies:
   cached_network_image_web: ^1.3.1
   flutter:
     sdk: flutter
-  flutter_hooks: ^0.21.3+1
+  flutter_hooks: ^0.21.3
   flutter_riverpod: ^3.0.3
   go_router: ^17.0.1
   hooks_riverpod: ^3.0.3

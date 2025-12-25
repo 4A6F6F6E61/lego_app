@@ -2,11 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
+import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/home/details/part_card.dart';
 import 'package:lego_app/util.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:yaru/widgets.dart';
 
 class DetailsPage extends ConsumerWidget {
   const DetailsPage({super.key, required this.setId});
@@ -72,25 +74,49 @@ class DetailsPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                final key = bricksetApiKey.value;
-                                if (key == null || key.isEmpty) {
-                                  showSnack(context, 'Please set Brickset API Key in settings');
-                                  return;
-                                }
-                                try {
-                                  final url = await bricksetApi.getInstructions2(key, set.setNum);
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final key = bricksetApiKey.value;
+                                    if (key == null || key.isEmpty) {
+                                      showSnack(context, 'Please set Brickset API Key in settings');
+                                      return;
+                                    }
+                                    try {
+                                      final url = await bricksetApi.getInstructions2(
+                                        key,
+                                        set.setNum,
+                                      );
 
-                                  await launchUrl(Uri.parse(url));
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    showSnack(context, 'Error: $e');
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.menu_book),
-                              label: const Text('Instructions'),
+                                      await launchUrl(Uri.parse(url));
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        showSnack(context, 'Error: $e');
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.menu_book),
+                                  label: const Text('Instructions'),
+                                ),
+                                const SizedBox(height: 8),
+                                YaruPopupMenuButton<LegoSetStatus>(
+                                  initialValue: set.status,
+                                  onSelected: (LegoSetStatus? newValue) {
+                                    if (newValue != null) {
+                                      updateSetStatus(set.id, newValue);
+                                    }
+                                  },
+                                  itemBuilder: (context) {
+                                    return [
+                                      for (final value in LegoSetStatus.values)
+                                        PopupMenuItem(value: value, child: Text(value.name)),
+                                    ];
+                                  },
+                                  child: Text(set.status.name),
+                                ),
+                              ],
                             ),
                           ],
                         ),
