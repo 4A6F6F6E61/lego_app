@@ -126,3 +126,9 @@ String proxiedImageUrl(String url) {
   }
   return url;
 }
+
+double calculateProgress(List<SetPart> parts) {
+  final totalNeeded = parts.fold<int>(0, (sum, part) => sum + part.quantityNeeded);
+  final totalFound = parts.fold<int>(0, (sum, part) => sum + part.quantityFound);
+  return totalNeeded == 0 ? 0.0 : totalFound / totalNeeded;
+}
