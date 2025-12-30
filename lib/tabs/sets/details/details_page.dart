@@ -6,7 +6,7 @@ import 'package:lego_app/api.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
-import 'package:lego_app/tabs/home/details/part_card.dart';
+import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yaru/yaru.dart';

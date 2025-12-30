@@ -4,7 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/set_part.dart';
-import 'package:lego_app/tabs/home/details/part_detail_dialog.dart';
+import 'package:lego_app/tabs/sets/details/part_detail_dialog.dart';
 import 'package:lego_app/util.dart';
 import 'package:yaru/yaru.dart';
 

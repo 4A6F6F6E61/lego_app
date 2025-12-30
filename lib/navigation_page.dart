@@ -22,7 +22,8 @@ class Tab {
 
 class _NavigationPageState extends State<NavigationPage> {
   final _tabs = <Tab>[
-    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Home'),
+    Tab(icon: Icons.dashboard, selectedIcon: Icons.dashboard, label: 'Dashboard'),
+    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Sets'),
     Tab(icon: YaruIcons.settings, selectedIcon: YaruIcons.settings_filled, label: 'Settings'),
   ];
   @override

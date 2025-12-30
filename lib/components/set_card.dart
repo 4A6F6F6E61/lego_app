@@ -31,7 +31,7 @@ class SetCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          context.go('/home/details/${set.id}');
+          context.go('/sets/details/${set.id}');
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

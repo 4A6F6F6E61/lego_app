@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
-import 'package:lego_app/tabs/home/set_card.dart';
+import 'package:lego_app/components/set_card.dart';
 import 'package:yaru/yaru.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class SetsPage extends ConsumerWidget {
+  const SetsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setsAsync = ref.watch(setsProvider);
 
     return Scaffold(
+      appBar: AppBar(title: const Text('All Sets')),
       body: setsAsync.when(
         data: (sets) {
           if (sets.isEmpty) {
