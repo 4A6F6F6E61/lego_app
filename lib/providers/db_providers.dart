@@ -1,9 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final setsProvider = StreamProvider<List<LegoSet>>((ref) {
+part 'db_providers.g.dart';
+
+@riverpod
+Stream<List<LegoSet>> sets(Ref ref) {
   if (auth.currentUser == null) return Stream.value([]);
 
   return supabase
@@ -11,21 +14,23 @@ final setsProvider = StreamProvider<List<LegoSet>>((ref) {
       .stream(primaryKey: ['id'])
       .order('set_num', ascending: true)
       .map((data) => data.map((json) => LegoSet.fromJson(json)).toList());
-});
+}
 
-final setPartsProvider = StreamProvider.family<List<SetPart>, String>((ref, setId) {
+@riverpod
+Stream<List<SetPart>> setParts(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value([]);
 
   return supabase
       .from('set_parts')
       .stream(primaryKey: ['id'])
       .eq('set_id', setId)
-      .order('part_num', ascending: true)
       .order('color_id', ascending: true)
+      .order('part_num', ascending: true)
       .map((data) => data.map((json) => SetPart.fromJson(json)).toList());
-});
+}
 
-final setProvider = StreamProvider.family<LegoSet?, String>((ref, setId) {
+@riverpod
+Stream<LegoSet?> set(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value(null);
 
   return supabase
@@ -33,7 +38,7 @@ final setProvider = StreamProvider.family<LegoSet?, String>((ref, setId) {
       .stream(primaryKey: ['id'])
       .eq('id', setId)
       .map((data) => data.isNotEmpty ? LegoSet.fromJson(data.first) : null);
-});
+}
 
 Future<void> updateSetStatus(String setId, LegoSetStatus status) async {
   await supabase.from('sets').update({'status': status.index}).eq('id', setId);

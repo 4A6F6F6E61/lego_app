@@ -1,11 +1,14 @@
 import 'dart:developer' as dev;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/api.dart';
 import 'package:lego_app/api/models/color.dart';
 import 'package:lego_app/providers/settings.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final colorsProvider = FutureProvider<Map<int, Color>>((ref) async {
+part 'rebrickable_providers.g.dart';
+
+@riverpod
+Future<Map<int, Color>> colors(Ref ref) async {
   dev.log('Fetching colors from Rebrickable API');
   final apiKey = await ref.watch(rebrickableApiKeyProvider.future);
   if (apiKey == null) return {};
@@ -35,4 +38,4 @@ final colorsProvider = FutureProvider<Map<int, Color>>((ref) async {
   dev.log('Fetched ${colors.length} colors from Rebrickable API');
 
   return colors;
-});
+}
