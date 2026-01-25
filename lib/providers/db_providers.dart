@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'db_providers.g.dart';
 
 @riverpod
-Stream<List<LegoSet>> sets(Ref ref) {
+Stream<List<LegoSet>> setsStream(Ref ref) {
   if (auth.currentUser == null) return Stream.value([]);
 
   return supabase
@@ -17,7 +17,7 @@ Stream<List<LegoSet>> sets(Ref ref) {
 }
 
 @riverpod
-Stream<List<SetPart>> setParts(Ref ref, String setId) {
+Stream<List<SetPart>> setPartsStream(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value([]);
 
   return supabase
@@ -30,7 +30,7 @@ Stream<List<SetPart>> setParts(Ref ref, String setId) {
 }
 
 @riverpod
-Stream<LegoSet?> set(Ref ref, String setId) {
+Stream<LegoSet?> setStream(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value(null);
 
   return supabase

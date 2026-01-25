@@ -26,7 +26,7 @@ final class ColorsProvider
         argument: null,
         retry: null,
         name: r'colorsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -46,4 +46,4 @@ final class ColorsProvider
   }
 }
 
-String _$colorsHash() => r'6768333a192318fcd0f9deb63d9cc9754af06acb';
+String _$colorsHash() => r'9cc0ba125ba8e0a9e4b89c13b281593b941c9590';

@@ -20,8 +20,8 @@ class DetailsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final setAsync = ref.watch(setProvider(setId));
-    final partsAsync = ref.watch(setPartsProvider(setId));
+    final setAsync = ref.watch(setStreamProvider(setId));
+    final partsAsync = ref.watch(setPartsStreamProvider(setId));
     final bricksetApiKey = ref.watch(bricksetApiKeyProvider);
 
     final headerHeight = useState<double>(170);

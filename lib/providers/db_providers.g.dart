@@ -9,10 +9,10 @@ part of 'db_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(sets)
-const setsProvider = SetsProvider._();
+@ProviderFor(setsStream)
+const setsStreamProvider = SetsStreamProvider._();
 
-final class SetsProvider
+final class SetsStreamProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<LegoSet>>,
@@ -20,19 +20,19 @@ final class SetsProvider
           Stream<List<LegoSet>>
         >
     with $FutureModifier<List<LegoSet>>, $StreamProvider<List<LegoSet>> {
-  const SetsProvider._()
+  const SetsStreamProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'setsProvider',
+        name: r'setsStreamProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$setsHash();
+  String debugGetCreateSourceHash() => _$setsStreamHash();
 
   @$internal
   @override
@@ -42,16 +42,16 @@ final class SetsProvider
 
   @override
   Stream<List<LegoSet>> create(Ref ref) {
-    return sets(ref);
+    return setsStream(ref);
   }
 }
 
-String _$setsHash() => r'ac2622b01e5e7b46ba1b4cc352c6f4b0f60d1fa4';
+String _$setsStreamHash() => r'91c2ebe39ca09083c3872db8f7c6854430e16c08';
 
-@ProviderFor(setParts)
-const setPartsProvider = SetPartsFamily._();
+@ProviderFor(setPartsStream)
+const setPartsStreamProvider = SetPartsStreamFamily._();
 
-final class SetPartsProvider
+final class SetPartsStreamProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<SetPart>>,
@@ -59,23 +59,23 @@ final class SetPartsProvider
           Stream<List<SetPart>>
         >
     with $FutureModifier<List<SetPart>>, $StreamProvider<List<SetPart>> {
-  const SetPartsProvider._({
-    required SetPartsFamily super.from,
+  const SetPartsStreamProvider._({
+    required SetPartsStreamFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
-         name: r'setPartsProvider',
+         name: r'setPartsStreamProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$setPartsHash();
+  String debugGetCreateSourceHash() => _$setPartsStreamHash();
 
   @override
   String toString() {
-    return r'setPartsProvider'
+    return r'setPartsStreamProvider'
         ''
         '($argument)';
   }
@@ -89,12 +89,12 @@ final class SetPartsProvider
   @override
   Stream<List<SetPart>> create(Ref ref) {
     final argument = this.argument as String;
-    return setParts(ref, argument);
+    return setPartsStream(ref, argument);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is SetPartsProvider && other.argument == argument;
+    return other is SetPartsStreamProvider && other.argument == argument;
   }
 
   @override
@@ -103,50 +103,50 @@ final class SetPartsProvider
   }
 }
 
-String _$setPartsHash() => r'7fe9870b18e4f206c60aa9df91595303cf949bb9';
+String _$setPartsStreamHash() => r'febe040d4fbe932ed8e036df92278d0f6340ba72';
 
-final class SetPartsFamily extends $Family
+final class SetPartsStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<SetPart>>, String> {
-  const SetPartsFamily._()
+  const SetPartsStreamFamily._()
     : super(
         retry: null,
-        name: r'setPartsProvider',
+        name: r'setPartsStreamProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  SetPartsProvider call(String setId) =>
-      SetPartsProvider._(argument: setId, from: this);
+  SetPartsStreamProvider call(String setId) =>
+      SetPartsStreamProvider._(argument: setId, from: this);
 
   @override
-  String toString() => r'setPartsProvider';
+  String toString() => r'setPartsStreamProvider';
 }
 
-@ProviderFor(set)
-const setProvider = SetFamily._();
+@ProviderFor(setStream)
+const setStreamProvider = SetStreamFamily._();
 
-final class SetProvider
+final class SetStreamProvider
     extends
         $FunctionalProvider<AsyncValue<LegoSet?>, LegoSet?, Stream<LegoSet?>>
     with $FutureModifier<LegoSet?>, $StreamProvider<LegoSet?> {
-  const SetProvider._({
-    required SetFamily super.from,
+  const SetStreamProvider._({
+    required SetStreamFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
-         name: r'setProvider',
+         name: r'setStreamProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$setHash();
+  String debugGetCreateSourceHash() => _$setStreamHash();
 
   @override
   String toString() {
-    return r'setProvider'
+    return r'setStreamProvider'
         ''
         '($argument)';
   }
@@ -159,12 +159,12 @@ final class SetProvider
   @override
   Stream<LegoSet?> create(Ref ref) {
     final argument = this.argument as String;
-    return set(ref, argument);
+    return setStream(ref, argument);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is SetProvider && other.argument == argument;
+    return other is SetStreamProvider && other.argument == argument;
   }
 
   @override
@@ -173,21 +173,22 @@ final class SetProvider
   }
 }
 
-String _$setHash() => r'e106ec2e8530daf8af494e860a3208b27c4b478c';
+String _$setStreamHash() => r'eb501dfc634fc87af3a275739f60e95ef0fbf3dd';
 
-final class SetFamily extends $Family
+final class SetStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<LegoSet?>, String> {
-  const SetFamily._()
+  const SetStreamFamily._()
     : super(
         retry: null,
-        name: r'setProvider',
+        name: r'setStreamProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  SetProvider call(String setId) => SetProvider._(argument: setId, from: this);
+  SetStreamProvider call(String setId) =>
+      SetStreamProvider._(argument: setId, from: this);
 
   @override
-  String toString() => r'setProvider';
+  String toString() => r'setStreamProvider';
 }

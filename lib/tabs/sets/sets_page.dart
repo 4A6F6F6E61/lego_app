@@ -10,7 +10,7 @@ class SetsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final setsAsync = ref.watch(setsProvider);
+    final setsAsync = ref.watch(setsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('All Sets')),
