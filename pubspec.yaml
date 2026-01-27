@@ -1,7 +1,7 @@
 name: lego_app
 description: "A cross-platform LEGO set rebuilding application."
 publish_to: 'none'
-version: 0.1.5
+version: 0.1.6
 
 environment:
   sdk: ^3.10.3
@@ -17,6 +17,7 @@ dependencies:
   go_router: ^17.0.1
   hooks_riverpod: ^3.0.3
   http: ^1.6.0
+  package_info_plus: ^9.0.0
   riverpod_annotation: ^3.0.3
   shared_preferences: ^2.5.4
   supabase_flutter: ^2.12.0
