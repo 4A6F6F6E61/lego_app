@@ -7,6 +7,7 @@ import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/components/part_card.dart';
+import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yaru/yaru.dart';
@@ -25,11 +26,13 @@ class DetailsPage extends HookConsumerWidget {
     final bricksetApiKey = ref.watch(bricksetApiKeyProvider);
 
     final headerHeight = useState<double>(170);
+
     final progress = useMemoized(() {
       final parts = partsAsync.value;
       if (parts == null || parts.isEmpty) return 0.0;
       return calculateProgress(parts);
     }, [partsAsync]);
+
     final progressBarColor = useMemoized(() {
       final scheme = Theme.of(context).colorScheme;
       if (progress <= 0.0) return scheme.error;
@@ -61,25 +64,8 @@ class DetailsPage extends HookConsumerWidget {
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                builder: (context) {
-                  return SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.open_in_new),
-                          title: const Text('Set all parts to found'),
-                          onTap: () async {
-                            await ref.read(setAllPartsToFoundProvider(setId).future);
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                isDismissible: false,
+                builder: (_) => OptionsModal(setId: setId),
               );
             },
           ),
