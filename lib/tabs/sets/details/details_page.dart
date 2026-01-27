@@ -53,7 +53,38 @@ class DetailsPage extends HookConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Set Details')),
+      appBar: AppBar(
+        title: const Text('Set Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(YaruIcons.view_more),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.open_in_new),
+                          title: const Text('Set all parts to found'),
+                          onTap: () async {
+                            await ref.read(setAllPartsToFoundProvider(setId).future);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: setAsync.when(
         data: (set) {
           if (set == null) return const Center(child: Text('Set not found'));

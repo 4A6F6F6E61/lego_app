@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/rebrickable_providers.dart';
 import 'package:lego_app/util.dart';
 
@@ -68,7 +69,23 @@ class PartDetailDialog extends ConsumerWidget {
           Text('Is Spare: ${part.isSpare ? "Yes" : "No"}'),
         ],
       ),
-      actions: [TextButton(onPressed: context.pop, child: const Text('Close'))],
+      actions: [
+        TextButton(
+          onPressed: () {
+            updatePartQuantityFound(part.id, part.quantityNeeded);
+            context.pop();
+          },
+          child: const Text('Found all'),
+        ),
+        TextButton(
+          onPressed: () {
+            flagPartAsSpare(part.id, part.isSpare ? false : true);
+            context.pop();
+          },
+          child: const Text('Toggle Spare'),
+        ),
+        TextButton(onPressed: context.pop, child: const Text('Close')),
+      ],
     );
   }
 }
