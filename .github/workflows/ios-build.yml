@@ -11,7 +11,7 @@ on:
         description: 'Path to iOS project (e.g., "ios" for React Native)'
         required: false
         type: string
-        default: '.'
+        default: 'ios'
       scheme:
         description: 'Xcode scheme to build (auto-detected if empty)'
         required: false
@@ -80,6 +80,10 @@ jobs:
       - name: Flutter pub get
         if: steps.detect.outputs.type == 'flutter'
         run: flutter pub get
+      
+      - name: Run build runner
+        if: steps.detect.outputs.type == 'flutter'
+        run: flutter pub run build_runner build --delete-conflicting-outputs || true
 
       - name: Setup Node.js
         if: steps.detect.outputs.type == 'reactnative' || steps.detect.outputs.type == 'expo'
