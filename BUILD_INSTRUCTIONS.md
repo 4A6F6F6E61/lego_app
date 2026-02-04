@@ -1,8 +1,8 @@
-# Building Lego App with Qt/Kirigami
+# Building Lego App with Qt
 
 ## Prerequisites
 
-Before building the application, you need to install the following dependencies:
+Before building the application, you need to install Qt 6. Kirigami is **optional** - the app will build with Qt Quick Controls if Kirigami is not available.
 
 ### Linux (Ubuntu/Debian)
 
@@ -12,13 +12,13 @@ sudo apt update
 sudo apt install -y \
     build-essential \
     cmake \
-    extra-cmake-modules \
     qt6-base-dev \
     qt6-declarative-dev \
-    qt6-tools-dev \
-    qml6-module-qtquick \
-    qml6-module-qtquick-controls \
-    qml6-module-qtquick-layouts \
+    libgl1-mesa-dev
+
+# Optional: Install Kirigami for enhanced UI
+sudo apt install -y \
+    extra-cmake-modules \
     libkf6kirigami-dev \
     libkf6coreaddons-dev \
     libkf6i18n-dev
@@ -29,9 +29,12 @@ sudo apt install -y \
 ```bash
 sudo dnf install -y \
     cmake \
-    extra-cmake-modules \
     qt6-qtbase-devel \
-    qt6-qtdeclarative-devel \
+    qt6-qtdeclarative-devel
+
+# Optional: Install Kirigami for enhanced UI
+sudo dnf install -y \
+    extra-cmake-modules \
     kf6-kirigami-devel \
     kf6-kcoreaddons-devel \
     kf6-ki18n-devel
@@ -42,9 +45,12 @@ sudo dnf install -y \
 ```bash
 sudo pacman -S \
     cmake \
-    extra-cmake-modules \
     qt6-base \
-    qt6-declarative \
+    qt6-declarative
+
+# Optional: Install Kirigami for enhanced UI
+sudo pacman -S \
+    extra-cmake-modules \
     kirigami \
     kcoreaddons \
     ki18n
@@ -56,18 +62,21 @@ sudo pacman -S \
 # Install Homebrew if not already installed
 # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-brew install cmake qt@6 kde-mac/kde/kf6-kirigami kde-mac/kde/kf6-kcoreaddons kde-mac/kde/kf6-ki18n
+brew install cmake qt@6
+
+# Optional: Install Kirigami for enhanced UI (via Craft)
+# See https://community.kde.org/Craft for Kirigami installation
 ```
 
 ### Windows
 
 1. Download and install Qt 6 from https://www.qt.io/download
-2. Install KDE Craft to get Kirigami and KDE Frameworks: https://community.kde.org/Craft
-3. Set up your environment using Craft
+2. Ensure CMake is installed (included with Qt installer or download separately)
+3. Optional: Install KDE Craft for Kirigami support: https://community.kde.org/Craft
 
 ## Building
 
-Once you have installed all prerequisites:
+Once you have installed Qt 6:
 
 ```bash
 # Create build directory
@@ -84,6 +93,26 @@ cmake --build .
 ./lego_app
 ```
 
+## UI Framework Notes
+
+The application uses **Qt Quick Controls 2** by default, which provides a Material Design-inspired interface. If KDE Frameworks 6 (Kirigami) is detected during the build, it will be used for an enhanced UI experience optimized for desktop environments.
+
+### Building with Qt Quick Controls Only
+
+The application will automatically detect if Kirigami is available. If not found, it will build using Qt Quick Controls 2:
+
+```
+-- Building without Kirigami - using Qt Quick Controls only
+```
+
+### Building with Kirigami (Optional)
+
+If Kirigami is installed, CMake will detect it and enable enhanced features:
+
+```
+-- Building with Kirigami support
+```
+
 ## Troubleshooting
 
 ### Qt not found
@@ -94,22 +123,22 @@ If CMake cannot find Qt, you may need to set the Qt6_DIR environment variable:
 export Qt6_DIR=/path/to/qt6/lib/cmake/Qt6
 ```
 
-### Kirigami not found
+### OpenGL/Graphics issues on Linux
 
-If CMake cannot find Kirigami, ensure that KDE Frameworks 6 is installed and set:
+If you encounter OpenGL-related errors:
 
 ```bash
-export CMAKE_PREFIX_PATH=/usr/lib/cmake:$CMAKE_PREFIX_PATH
+sudo apt install libgl1-mesa-dev libqt6opengl6-dev
 ```
 
 ### General build issues
 
 For general build issues:
 
-1. Make sure you have all the prerequisites installed
+1. Make sure you have Qt 6.5 or later installed
 2. Try cleaning the build directory: `rm -rf build && mkdir build`
 3. Check CMake output for specific error messages
-4. Ensure you're using Qt 6.5 or later and KDE Frameworks 6
+4. Verify your compiler supports C++17
 
 ## Development
 
@@ -145,27 +174,29 @@ QT_LOGGING_RULES="*.debug=true" ./lego_app
 
 ### Linux
 
-The application should work on any modern Linux distribution with Qt 6 and KDE Frameworks 6 installed. It integrates well with KDE Plasma but also works on other desktop environments.
+The application works on any modern Linux distribution with Qt 6 installed. The Material style is used by default, with optional Kirigami support for KDE Plasma integration.
 
 ### macOS
 
-On macOS, the application will use the native macOS style. Make sure to install all dependencies through Homebrew.
+On macOS, the application uses the native macOS style through Qt. Make sure to install Qt 6 through Homebrew.
 
 ### Windows
 
-On Windows, the application will use the Windows style. The Craft framework makes it easier to manage KDE dependencies on Windows.
+On Windows, the application uses the Windows style. Install Qt 6 through the official Qt installer.
 
 ## Docker Build (Advanced)
 
-For reproducible builds, you can use Docker:
+For reproducible builds using Qt Quick Controls only:
 
 ```bash
-# Create a Dockerfile or use this command directly
 docker run --rm -v $(pwd):/app -w /app ubuntu:22.04 bash -c "
 apt update && \
-apt install -y build-essential cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev && \
+apt install -y build-essential cmake qt6-base-dev qt6-declarative-dev libgl1-mesa-dev && \
 mkdir -p build && cd build && cmake .. && cmake --build .
 "
 ```
 
-Note: This example is simplified and may require additional setup for KDE Frameworks.
+## CI/CD Builds
+
+The GitHub Actions workflow builds the application on Linux, macOS, and Windows using Qt Quick Controls only (no Kirigami dependency). This ensures the application can be built in CI environments where KDE Frameworks may not be readily available.
+
