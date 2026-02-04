@@ -1,179 +1,254 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import org.lego.app 1.0
 
-Kirigami.ScrollablePage {
+Controls.ScrollView {
     id: dashboardPage
-    
-    title: "Dashboard"
     
     required property var model
     
+    contentWidth: availableWidth
+    
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        width: dashboardPage.availableWidth
+        spacing: 24
         
-        // Stats Section
-        RowLayout {
+        Controls.Pane {
             Layout.fillWidth: true
-            spacing: Kirigami.Units.largeSpacing
+            Layout.topMargin: 16
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
             
-            // Total Sets Card
-            Kirigami.Card {
-                Layout.fillWidth: true
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
                 
-                contentItem: ColumnLayout {
-                    spacing: Kirigami.Units.smallSpacing
-                    
-                    Kirigami.Icon {
-                        source: "view-list-icons"
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.large
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.large
-                        color: Kirigami.Theme.linkColor
-                    }
-                    
-                    Kirigami.Heading {
-                        text: model.count
-                        level: 2
-                    }
-                    
-                    Controls.Label {
-                        text: "Total Sets"
-                        color: Kirigami.Theme.disabledTextColor
-                    }
+                Controls.Label {
+                    text: "Dashboard"
+                    font.pixelSize: 24
+                    font.bold: true
                 }
-            }
-            
-            // Built Sets Card
-            Kirigami.Card {
-                Layout.fillWidth: true
                 
-                contentItem: ColumnLayout {
-                    spacing: Kirigami.Units.smallSpacing
+                // Stats Section
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 16
                     
-                    Kirigami.Icon {
-                        source: "checkmark"
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.large
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.large
-                        color: Kirigami.Theme.positiveTextColor
+                    // Total Sets Card
+                    Controls.Pane {
+                        Layout.fillWidth: true
+                        background: Rectangle {
+                            color: "#f0f0f0"
+                            radius: 8
+                        }
+                        
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 8
+                            
+                            Controls.Label {
+                                text: "📦"
+                                font.pixelSize: 32
+                            }
+                            
+                            Controls.Label {
+                                text: model.count
+                                font.pixelSize: 32
+                                font.bold: true
+                            }
+                            
+                            Controls.Label {
+                                text: "Total Sets"
+                                opacity: 0.6
+                            }
+                        }
                     }
                     
-                    Kirigami.Heading {
-                        text: model.countByStatus(2)
-                        level: 2
-                    }
-                    
-                    Controls.Label {
-                        text: "Built Sets"
-                        color: Kirigami.Theme.disabledTextColor
+                    // Built Sets Card
+                    Controls.Pane {
+                        Layout.fillWidth: true
+                        background: Rectangle {
+                            color: "#f0f0f0"
+                            radius: 8
+                        }
+                        
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 8
+                            
+                            Controls.Label {
+                                text: "✓"
+                                font.pixelSize: 32
+                            }
+                            
+                            Controls.Label {
+                                text: model.countByStatus(2)
+                                font.pixelSize: 32
+                                font.bold: true
+                            }
+                            
+                            Controls.Label {
+                                text: "Built Sets"
+                                opacity: 0.6
+                            }
+                        }
                     }
                 }
             }
         }
         
         // Actions Section
-        Kirigami.Heading {
-            text: "Actions"
-            level: 3
-        }
-        
-        Kirigami.Card {
+        Controls.Pane {
             Layout.fillWidth: true
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
             
-            contentItem: RowLayout {
-                Kirigami.Icon {
-                    source: "list-add"
-                    Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-                    Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
+                
+                Controls.Label {
+                    text: "Actions"
+                    font.pixelSize: 20
+                    font.bold: true
                 }
                 
-                ColumnLayout {
+                Controls.ItemDelegate {
                     Layout.fillWidth: true
-                    spacing: 0
                     
-                    Controls.Label {
-                        text: "Add missing parts to Rebrickable"
-                        font.bold: true
+                    contentItem: RowLayout {
+                        Controls.Label {
+                            text: "➕"
+                            font.pixelSize: 24
+                        }
+                        
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 4
+                            
+                            Controls.Label {
+                                text: "Add missing parts to Rebrickable"
+                                font.bold: true
+                            }
+                            
+                            Controls.Label {
+                                text: "Sync missing parts from your sets to your Rebrickable wanted list"
+                                opacity: 0.6
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+                        }
                     }
                     
-                    Controls.Label {
-                        text: "Sync missing parts from your sets to your Rebrickable wanted list"
-                        color: Kirigami.Theme.disabledTextColor
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
+                    onClicked: {
+                        messageLabel.text = "This feature is coming soon!"
+                        messageLabel.visible = true
+                        messageTimer.start()
                     }
                 }
-            }
-            
-            onClicked: {
-                applicationWindow().showPassiveNotification("This feature is coming soon!")
             }
         }
         
         // Currently Building Section
-        ColumnLayout {
+        Controls.Pane {
             Layout.fillWidth: true
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
+            Layout.bottomMargin: 16
             visible: buildingRepeater.count > 0
             
-            RowLayout {
-                Layout.fillWidth: true
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
                 
-                Kirigami.Heading {
-                    text: "Currently Building"
-                    level: 3
+                RowLayout {
                     Layout.fillWidth: true
-                }
-                
-                Controls.Button {
-                    text: "View All Sets"
-                    flat: true
-                    onClicked: {
-                        applicationWindow().pageStack.clear()
-                        applicationWindow().pageStack.push("qrc:/qml/pages/SetsPage.qml", {model: model})
+                    
+                    Controls.Label {
+                        text: "Currently Building"
+                        font.pixelSize: 20
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+                    
+                    Controls.Button {
+                        text: "View All Sets"
+                        flat: true
+                        onClicked: {
+                            applicationWindow().currentPage = 1
+                        }
                     }
                 }
-            }
-            
-            Flow {
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.largeSpacing
                 
-                Repeater {
-                    id: buildingRepeater
-                    model: dashboardPage.model.getSetsByStatus(1)
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 16
                     
-                    SetCard {
-                        width: 280
-                        setData: modelData
+                    Repeater {
+                        id: buildingRepeater
+                        model: dashboardPage.model.getSetsByStatus(1)
+                        
+                        SetCard {
+                            width: 280
+                            setData: modelData
+                        }
                     }
                 }
             }
         }
         
         // No active builds message
-        ColumnLayout {
+        Controls.Pane {
             Layout.fillWidth: true
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
+            Layout.bottomMargin: 16
             visible: buildingRepeater.count === 0
             
-            RowLayout {
-                Layout.fillWidth: true
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
                 
-                Kirigami.Heading {
-                    text: "No active builds"
-                    level: 3
+                RowLayout {
                     Layout.fillWidth: true
-                }
-                
-                Controls.Button {
-                    text: "View All Sets"
-                    flat: true
-                    onClicked: {
-                        applicationWindow().pageStack.clear()
-                        applicationWindow().pageStack.push("qrc:/qml/pages/SetsPage.qml", {model: model})
+                    
+                    Controls.Label {
+                        text: "No active builds"
+                        font.pixelSize: 20
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+                    
+                    Controls.Button {
+                        text: "View All Sets"
+                        flat: true
+                        onClicked: {
+                            applicationWindow().currentPage = 1
+                        }
                     }
                 }
             }
+        }
+    }
+    
+    Controls.Label {
+        id: messageLabel
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: 20
+        visible: false
+        text: ""
+        padding: 12
+        background: Rectangle {
+            color: "#e0e0e0"
+            radius: 4
+        }
+        
+        Timer {
+            id: messageTimer
+            interval: 3000
+            onTriggered: messageLabel.visible = false
         }
     }
 }

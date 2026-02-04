@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import org.lego.app 1.0
 
-Kirigami.Page {
+Controls.Page {
     id: authPage
     
     title: isLogin ? "Login" : "Register"
@@ -14,30 +13,27 @@ Kirigami.Page {
     ColumnLayout {
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.9, 500)
-        spacing: Kirigami.Units.largeSpacing
+        spacing: 16
         
-        Kirigami.Heading {
+        Controls.Label {
             Layout.alignment: Qt.AlignHCenter
             text: authPage.isLogin ? "Login" : "Register"
-            level: 1
+            font.pixelSize: 28
+            font.bold: true
         }
         
-        Kirigami.FormLayout {
+        Controls.TextField {
+            id: emailField
             Layout.fillWidth: true
-            
-            Controls.TextField {
-                id: emailField
-                Kirigami.FormData.label: "Email:"
-                placeholderText: "your.email@example.com"
-            }
-            
-            Controls.TextField {
-                id: passwordField
-                Kirigami.FormData.label: "Password:"
-                echoMode: Controls.TextField.Password
-                placeholderText: "Password"
-                onAccepted: submitButton.clicked()
-            }
+            placeholderText: "Email"
+        }
+        
+        Controls.TextField {
+            id: passwordField
+            Layout.fillWidth: true
+            placeholderText: "Password"
+            echoMode: Controls.TextField.Password
+            onAccepted: submitButton.clicked()
         }
         
         Controls.Button {
@@ -63,18 +59,38 @@ Kirigami.Page {
             }
         }
         
-        Kirigami.InlineMessage {
+        Controls.Label {
             Layout.fillWidth: true
             visible: AuthManager.errorMessage !== ""
-            type: Kirigami.MessageType.Error
             text: AuthManager.errorMessage
+            color: "red"
+            wrapMode: Text.WordWrap
         }
     }
     
     Connections {
         target: AuthManager
         function onRegistrationSuccessful() {
-            applicationWindow().showPassiveNotification("Registration successful! Please check your email.")
+            // Show a temporary message
+            messageLabel.text = "Registration successful! Please check your email."
+            messageLabel.visible = true
+            messageTimer.start()
+        }
+    }
+    
+    Controls.Label {
+        id: messageLabel
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: 20
+        visible: false
+        text: ""
+        color: "green"
+        
+        Timer {
+            id: messageTimer
+            interval: 3000
+            onTriggered: messageLabel.visible = false
         }
     }
 }

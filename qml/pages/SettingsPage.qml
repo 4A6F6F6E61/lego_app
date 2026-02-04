@@ -1,53 +1,118 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import org.lego.app 1.0
 
-Kirigami.ScrollablePage {
+Controls.ScrollView {
     id: settingsPage
     
-    title: "Settings"
+    contentWidth: availableWidth
     
-    Kirigami.FormLayout {
-        width: Math.min(parent.width, 600)
+    ColumnLayout {
+        width: Math.min(settingsPage.availableWidth - 32, 600)
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 24
         
-        Kirigami.Separator {
-            Kirigami.FormData.isSection: true
-            Kirigami.FormData.label: "Account"
-        }
-        
-        Controls.Label {
-            Kirigami.FormData.label: "Status:"
-            text: AuthManager.isAuthenticated ? "Logged in" : "Not logged in"
-        }
-        
-        Controls.Button {
-            text: "Logout"
-            onClicked: {
-                AuthManager.logout()
+        Controls.Pane {
+            Layout.fillWidth: true
+            Layout.topMargin: 16
+            
+            Controls.Label {
+                text: "Settings"
+                font.pixelSize: 24
+                font.bold: true
             }
         }
         
-        Kirigami.Separator {
-            Kirigami.FormData.isSection: true
-            Kirigami.FormData.label: "About"
+        Controls.Pane {
+            Layout.fillWidth: true
+            
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
+                
+                Controls.Label {
+                    text: "Account"
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+                
+                GridLayout {
+                    columns: 2
+                    columnSpacing: 16
+                    rowSpacing: 8
+                    Layout.fillWidth: true
+                    
+                    Controls.Label {
+                        text: "Status:"
+                        font.bold: true
+                    }
+                    
+                    Controls.Label {
+                        text: AuthManager.isAuthenticated ? "Logged in" : "Not logged in"
+                    }
+                }
+                
+                Controls.Button {
+                    text: "Logout"
+                    onClicked: {
+                        AuthManager.logout()
+                    }
+                }
+            }
         }
         
-        Controls.Label {
-            Kirigami.FormData.label: "Application:"
-            text: "Lego App"
-        }
-        
-        Controls.Label {
-            Kirigami.FormData.label: "Version:"
-            text: "0.1.6"
-        }
-        
-        Controls.Label {
-            Kirigami.FormData.label: "Description:"
-            text: "A cross-platform LEGO set rebuilding application"
-            wrapMode: Text.WordWrap
+        Controls.Pane {
+            Layout.fillWidth: true
+            Layout.bottomMargin: 16
+            
+            ColumnLayout {
+                width: parent.width
+                spacing: 16
+                
+                Controls.Label {
+                    text: "About"
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+                
+                GridLayout {
+                    columns: 2
+                    columnSpacing: 16
+                    rowSpacing: 8
+                    Layout.fillWidth: true
+                    
+                    Controls.Label {
+                        text: "Application:"
+                        font.bold: true
+                    }
+                    
+                    Controls.Label {
+                        text: "Lego App"
+                    }
+                    
+                    Controls.Label {
+                        text: "Version:"
+                        font.bold: true
+                    }
+                    
+                    Controls.Label {
+                        text: "0.1.6"
+                    }
+                    
+                    Controls.Label {
+                        text: "Description:"
+                        font.bold: true
+                        Layout.alignment: Qt.AlignTop
+                    }
+                    
+                    Controls.Label {
+                        text: "A cross-platform LEGO set rebuilding application"
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                }
+            }
         }
     }
 }

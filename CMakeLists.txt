@@ -9,7 +9,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Network Sql)
-find_package(KF6 REQUIRED COMPONENTS Kirigami CoreAddons I18n)
+
+# Try to find Kirigami (optional)
+find_package(KF6 QUIET COMPONENTS Kirigami CoreAddons I18n)
 
 add_executable(lego_app
     src/main.cpp
@@ -28,10 +30,20 @@ target_link_libraries(lego_app PRIVATE
     Qt6::QuickControls2
     Qt6::Network
     Qt6::Sql
-    KF6::Kirigami
-    KF6::CoreAddons
-    KF6::I18n
 )
+
+# Link Kirigami if available
+if(KF6_FOUND)
+    target_link_libraries(lego_app PRIVATE
+        KF6::Kirigami
+        KF6::CoreAddons
+        KF6::I18n
+    )
+    target_compile_definitions(lego_app PRIVATE HAVE_KIRIGAMI)
+    message(STATUS "Building with Kirigami support")
+else()
+    message(STATUS "Building without Kirigami - using Qt Quick Controls only")
+endif()
 
 install(TARGETS lego_app
     BUNDLE DESTINATION .

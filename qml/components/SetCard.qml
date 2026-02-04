@@ -1,30 +1,64 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 
-Kirigami.Card {
+Controls.Pane {
     id: setCard
     
     required property var setData
     
-    banner {
-        source: setData.imgUrl || ""
-        title: setData.name
-        titleIcon: "games-highscores"
+    background: Rectangle {
+        color: "#f5f5f5"
+        radius: 8
+        border.color: "#e0e0e0"
+        border.width: 1
     }
     
-    contentItem: ColumnLayout {
-        spacing: Kirigami.Units.smallSpacing
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 8
+        
+        // Image placeholder or actual image
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 120
+            color: "#e0e0e0"
+            radius: 4
+            
+            Image {
+                anchors.fill: parent
+                source: setData.imgUrl || ""
+                fillMode: Image.PreserveAspectFit
+                visible: setData.imgUrl
+            }
+            
+            Controls.Label {
+                anchors.centerIn: parent
+                text: "🧱"
+                font.pixelSize: 48
+                visible: !setData.imgUrl
+            }
+        }
+        
+        Controls.Label {
+            Layout.fillWidth: true
+            text: setData.name
+            font.bold: true
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
+        }
         
         Controls.Label {
             text: "Set #: " + setData.setNum
-            color: Kirigami.Theme.disabledTextColor
+            opacity: 0.6
+            font.pixelSize: 12
         }
         
         Controls.Label {
             text: "Year: " + (setData.year || "Unknown")
-            color: Kirigami.Theme.disabledTextColor
+            opacity: 0.6
+            font.pixelSize: 12
         }
         
         Controls.Label {
@@ -37,11 +71,7 @@ Kirigami.Card {
                 }
             }
             font.bold: true
+            font.pixelSize: 12
         }
     }
-    
-    // Add click handler to navigate to details (if implemented)
-    // onClicked: {
-    //     applicationWindow().pageStack.push("qrc:/qml/pages/DetailsPage.qml", {setId: setData.id})
-    // }
 }

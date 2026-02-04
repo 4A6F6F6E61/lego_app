@@ -15,8 +15,8 @@ int main(int argc, char *argv[])
     app.setApplicationName("Lego App");
     app.setApplicationVersion("0.1.6");
     
-    // Set Kirigami style
-    QQuickStyle::setStyle("org.kde.desktop");
+    // Set Material style for Qt Quick Controls
+    QQuickStyle::setStyle("Material");
     
     // Initialize Supabase
     SupabaseClient::instance()->initialize(

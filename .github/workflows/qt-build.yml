@@ -1,4 +1,4 @@
-name: Qt/Kirigami Build
+name: Qt Build
 
 on:
   push:
@@ -13,22 +13,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install Qt and KDE dependencies
+    - name: Install Qt dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
           cmake \
-          extra-cmake-modules \
           qt6-base-dev \
           qt6-declarative-dev \
-          qt6-tools-dev \
-          qml6-module-qtquick \
-          qml6-module-qtquick-controls \
-          qml6-module-qtquick-layouts \
-          libkf6kirigami-dev \
-          libkf6coreaddons-dev \
-          libkf6i18n-dev
+          libgl1-mesa-dev \
+          libqt6opengl6-dev
     
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release

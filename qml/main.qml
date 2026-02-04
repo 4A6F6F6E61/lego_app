@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls as Controls
-import org.kde.kirigami as Kirigami
+import QtQuick.Layouts
 import org.lego.app 1.0
 
-Kirigami.ApplicationWindow {
+Controls.ApplicationWindow {
     id: root
     
     title: "Lego App"
@@ -13,56 +13,29 @@ Kirigami.ApplicationWindow {
     minimumWidth: 400
     minimumHeight: 300
     
-    pageStack.initialPage: AuthManager.isAuthenticated ? dashboardPage : authPage
+    visible: true
+    
+    property int currentPage: 0
     
     Connections {
         target: AuthManager
         function onAuthenticationChanged() {
             if (AuthManager.isAuthenticated) {
-                root.pageStack.replace(dashboardPage)
-                // Load sets data
+                currentPage = 0 // Dashboard
                 legoSetModel.refresh()
             } else {
-                root.pageStack.replace(authPage)
+                stackView.push(authPageComponent)
             }
         }
     }
     
-    // Global drawer for navigation when authenticated
-    globalDrawer: Kirigami.GlobalDrawer {
-        id: drawer
-        title: "Lego App"
-        titleIcon: "applications-games"
-        
-        enabled: AuthManager.isAuthenticated
-        modal: !root.wideScreen
-        
-        actions: [
-            Kirigami.Action {
-                text: "Dashboard"
-                icon.name: "dashboard-show"
-                onTriggered: {
-                    root.pageStack.clear()
-                    root.pageStack.push(dashboardPage)
-                }
-            },
-            Kirigami.Action {
-                text: "Sets"
-                icon.name: "view-list-icons"
-                onTriggered: {
-                    root.pageStack.clear()
-                    root.pageStack.push(setsPage)
-                }
-            },
-            Kirigami.Action {
-                text: "Settings"
-                icon.name: "settings-configure"
-                onTriggered: {
-                    root.pageStack.clear()
-                    root.pageStack.push(settingsPage)
-                }
-            }
-        ]
+    Component.onCompleted: {
+        if (AuthManager.isAuthenticated) {
+            stackView.push(navigationComponent)
+            legoSetModel.refresh()
+        } else {
+            stackView.push(authPageComponent)
+        }
     }
     
     // Model for LEGO sets
@@ -70,28 +43,123 @@ Kirigami.ApplicationWindow {
         id: legoSetModel
     }
     
-    // Page components
+    Controls.StackView {
+        id: stackView
+        anchors.fill: parent
+        initialItem: Item {}
+    }
+    
+    // Auth page component
     Component {
-        id: authPage
+        id: authPageComponent
         AuthPage {}
     }
     
+    // Navigation component with drawer
     Component {
-        id: dashboardPage
-        DashboardPage {
-            model: legoSetModel
+        id: navigationComponent
+        Item {
+            Controls.Drawer {
+                id: drawer
+                width: Math.min(root.width * 0.66, 300)
+                height: root.height
+                
+                modal: root.width < 800
+                interactive: root.width < 800
+                visible: root.width >= 800
+                position: root.width >= 800 ? 1 : 0
+                
+                Column {
+                    anchors.fill: parent
+                    spacing: 0
+                    
+                    Controls.Pane {
+                        width: parent.width
+                        
+                        ColumnLayout {
+                            width: parent.width
+                            
+                            Controls.Label {
+                                text: "Lego App"
+                                font.pixelSize: 20
+                                font.bold: true
+                            }
+                        }
+                    }
+                    
+                    Controls.ItemDelegate {
+                        width: parent.width
+                        text: "Dashboard"
+                        highlighted: currentPage === 0
+                        onClicked: {
+                            currentPage = 0
+                            if (root.width < 800) drawer.close()
+                        }
+                    }
+                    
+                    Controls.ItemDelegate {
+                        width: parent.width
+                        text: "Sets"
+                        highlighted: currentPage === 1
+                        onClicked: {
+                            currentPage = 1
+                            if (root.width < 800) drawer.close()
+                        }
+                    }
+                    
+                    Controls.ItemDelegate {
+                        width: parent.width
+                        text: "Settings"
+                        highlighted: currentPage === 2
+                        onClicked: {
+                            currentPage = 2
+                            if (root.width < 800) drawer.close()
+                        }
+                    }
+                }
+            }
+            
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.leftMargin: drawer.visible && !drawer.modal ? drawer.width : 0
+                spacing: 0
+                
+                Controls.ToolBar {
+                    Layout.fillWidth: true
+                    visible: root.width < 800
+                    
+                    RowLayout {
+                        anchors.fill: parent
+                        
+                        Controls.ToolButton {
+                            text: "☰"
+                            onClicked: drawer.open()
+                        }
+                        
+                        Controls.Label {
+                            text: currentPage === 0 ? "Dashboard" : currentPage === 1 ? "Sets" : "Settings"
+                            font.pixelSize: 18
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+                
+                Controls.StackLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    currentIndex: currentPage
+                    
+                    DashboardPage {
+                        model: legoSetModel
+                    }
+                    
+                    SetsPage {
+                        model: legoSetModel
+                    }
+                    
+                    SettingsPage {}
+                }
+            }
         }
-    }
-    
-    Component {
-        id: setsPage
-        SetsPage {
-            model: legoSetModel
-        }
-    }
-    
-    Component {
-        id: settingsPage
-        SettingsPage {}
     }
 }
