@@ -1,0 +1,92 @@
+name: Qt/Kirigami Build
+
+on:
+  push:
+    branches: [ copilot/rewrite-app-qt-kirigami ]
+  pull_request:
+    branches: [ copilot/rewrite-app-qt-kirigami ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Qt and KDE dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          extra-cmake-modules \
+          qt6-base-dev \
+          qt6-declarative-dev \
+          qt6-tools-dev \
+          qml6-module-qtquick \
+          qml6-module-qtquick-controls \
+          qml6-module-qtquick-layouts \
+          libkf6kirigami-dev \
+          libkf6coreaddons-dev \
+          libkf6i18n-dev
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lego_app-linux
+        path: build/lego_app
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Qt
+      run: |
+        brew install cmake qt@6
+        echo "$(brew --prefix qt@6)/bin" >> $GITHUB_PATH
+    
+    - name: Configure CMake
+      run: |
+        export Qt6_DIR=$(brew --prefix qt@6)/lib/cmake/Qt6
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lego_app-macos
+        path: build/lego_app
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        modules: 'qtnetworkauth'
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lego_app-windows
+        path: build/Release/lego_app.exe
