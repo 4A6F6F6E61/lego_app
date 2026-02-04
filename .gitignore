@@ -49,3 +49,22 @@ app.*.map.json
 *.g.dart
 
 dist
+# Qt/CMake build artifacts
+build/
+build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.user
+*.user.*
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+lego_app
