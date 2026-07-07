@@ -30,6 +30,11 @@ class PartCard extends HookWidget {
       text: part.quantityFound.toString(),
     );
 
+    useEffect(() {
+      inputController.text = part.quantityFound.toString();
+      return null;
+    }, [part.quantityFound]);
+
     Future<void> updateQuantityFound(int quantity) async {
       if (quantity < 0 || quantity > part.quantityNeeded) {
         inputController.text = part.quantityFound.toString();

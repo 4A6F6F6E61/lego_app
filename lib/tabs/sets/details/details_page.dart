@@ -7,6 +7,7 @@ import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/components/part_card.dart';
+import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yaru/yaru.dart';
@@ -20,16 +21,18 @@ class DetailsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final setAsync = ref.watch(setProvider(setId));
-    final partsAsync = ref.watch(setPartsProvider(setId));
+    final setAsync = ref.watch(setStreamProvider(setId));
+    final partsAsync = ref.watch(setPartsStreamProvider(setId));
     final bricksetApiKey = ref.watch(bricksetApiKeyProvider);
 
     final headerHeight = useState<double>(170);
+
     final progress = useMemoized(() {
       final parts = partsAsync.value;
       if (parts == null || parts.isEmpty) return 0.0;
       return calculateProgress(parts);
     }, [partsAsync]);
+
     final progressBarColor = useMemoized(() {
       final scheme = Theme.of(context).colorScheme;
       if (progress <= 0.0) return scheme.error;
@@ -53,7 +56,21 @@ class DetailsPage extends HookConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Set Details')),
+      appBar: AppBar(
+        title: const Text('Set Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(YaruIcons.view_more),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isDismissible: false,
+                builder: (_) => OptionsModal(setId: setId),
+              );
+            },
+          ),
+        ],
+      ),
       body: setAsync.when(
         data: (set) {
           if (set == null) return const Center(child: Text('Set not found'));

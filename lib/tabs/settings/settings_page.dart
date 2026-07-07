@@ -7,6 +7,7 @@ import 'package:lego_app/db/db.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/settings/login_modal.dart';
 import 'package:lego_app/util.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:yaru/yaru.dart';
 
 class SettingsPage extends HookConsumerWidget {
@@ -16,6 +17,7 @@ class SettingsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final packageInfo = useFuture(useMemoized(() => PackageInfo.fromPlatform()));
     final userTokenAsync = ref.watch(userTokenProvider);
     final rebrickableAPIKey = ref.watch(rebrickableApiKeyProvider);
     final bricksetAPIKey = ref.watch(bricksetApiKeyProvider);
@@ -202,6 +204,14 @@ class SettingsPage extends HookConsumerWidget {
               width: 200,
               child: ElevatedButton(onPressed: signOut, child: const Text('Sign out')),
             ),
+            if (packageInfo.hasData)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text(
+                  'Version: ${packageInfo.data!.version}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
           ],
         ),
       ),
