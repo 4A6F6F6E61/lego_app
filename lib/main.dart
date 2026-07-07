@@ -2,32 +2,36 @@ import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yaru/yaru.dart';
 
 Future<void> main() async {
-  await YaruWindowTitleBar.ensureInitialized();
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    await YaruWindowTitleBar.ensureInitialized();
+  }
 
   WidgetsFlutterBinding.ensureInitialized();
   SemanticsBinding.instance.ensureSemantics();
 
   await Supabase.initialize(
-    url: 'https://kuselrpmvzwtxmfzukxv.supabase.co',
-    anonKey: 'sb_publishable_Ymuui0DvLloTR2SO4fVfyw_Bw3MHT87',
+    url: 'https://ugeaobcrrhwqmvlpwmpw.supabase.co',
+    anonKey: 'sb_publishable_XYC10qjxJD7ryTFMVUBLUQ_rr6_gPkd',
   );
 
   runApp(const ProviderScope(child: App()));
 
-  doWhenWindowReady(() {
-    appWindow.minSize = Size(150, 100);
-    appWindow.size = Size(1280, 720);
-    appWindow.alignment = Alignment.center;
-    appWindow.show();
-  });
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    doWhenWindowReady(() {
+      appWindow.minSize = Size(150, 100);
+      appWindow.size = Size(1280, 720);
+      appWindow.alignment = Alignment.center;
+      appWindow.show();
+    });
+  }
 }
 
 class App extends StatelessWidget {
@@ -36,14 +40,26 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     YaruVariant defaultVariant = YaruVariant.adwaitaRed;
+    var darkTheme = defaultVariant.darkTheme;
     if (!kIsWeb && Platform.isLinux) {
       return YaruTheme(
         builder: (context, yaru, child) => _App(
           themeMode: .system,
           lightTheme: defaultVariant.theme,
-          darkTheme: defaultVariant.darkTheme,
+          darkTheme: darkTheme,
           highContrastTheme: yaruHighContrastLight,
           highContrastDarkTheme: yaruHighContrastDark,
+        ),
+      );
+    }
+    const black = Color(0x00000000);
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      darkTheme = darkTheme.copyWith(
+        scaffoldBackgroundColor: black,
+        appBarTheme: AppBarThemeData(backgroundColor: black),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: black,
         ),
       );
     }
@@ -51,7 +67,7 @@ class App extends StatelessWidget {
     return _App(
       themeMode: .system,
       lightTheme: defaultVariant.theme,
-      darkTheme: defaultVariant.darkTheme,
+      darkTheme: darkTheme,
       highContrastTheme: yaruHighContrastLight,
       highContrastDarkTheme: yaruHighContrastDark,
     );
@@ -90,7 +106,9 @@ class _App extends StatelessWidget {
         if (kIsWeb) {
           return MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(
+                bottom: 24.0,
+              ),
               padding: existingMediaQuery.padding.copyWith(bottom: 24.0),
               textScaleFactor: 0.85,
             ),
@@ -103,7 +121,9 @@ class _App extends StatelessWidget {
             defaultTargetPlatform == TargetPlatform.fuchsia) {
           return MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 34.0),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(
+                bottom: 34.0,
+              ),
             ),
             child: child ?? const SizedBox(),
           );

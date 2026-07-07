@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,14 +24,28 @@ class Tab {
 
 class _NavigationPageState extends State<NavigationPage> {
   final _tabs = <Tab>[
-    Tab(icon: Icons.dashboard, selectedIcon: Icons.dashboard, label: 'Dashboard'),
-    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Sets'),
-    Tab(icon: YaruIcons.settings, selectedIcon: YaruIcons.settings_filled, label: 'Settings'),
+    Tab(
+      icon: Icons.dashboard,
+      selectedIcon: Icons.dashboard,
+      label: 'Dashboard',
+    ),
+    Tab(
+      icon: YaruIcons.home,
+      selectedIcon: YaruIcons.home_filled,
+      label: 'Sets',
+    ),
+    Tab(
+      icon: YaruIcons.settings,
+      selectedIcon: YaruIcons.settings_filled,
+      label: 'Settings',
+    ),
   ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: kIsWeb ? null : YaruWindowTitleBar(title: const Text('Lego App')),
+      appBar: !kIsWeb && !Platform.isAndroid && !Platform.isIOS
+          ? YaruWindowTitleBar(title: const Text('Lego App'))
+          : null,
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) {
@@ -48,7 +64,8 @@ class _NavigationPageState extends State<NavigationPage> {
                       ),
                   ],
                   selectedIndex: widget.navShell.currentIndex,
-                  onDestinationSelected: (index) => widget.navShell.goBranch(index),
+                  onDestinationSelected: (index) =>
+                      widget.navShell.goBranch(index),
                   minExtendedWidth: 180,
                   extended: true,
                 ),
@@ -61,20 +78,20 @@ class _NavigationPageState extends State<NavigationPage> {
               children: [
                 Expanded(child: widget.navShell),
                 const Divider(height: 0.0),
-                NavigationBar(
-                  destinations: [
+                BottomNavigationBar(
+                  items: [
                     for (final tab in _tabs)
-                      NavigationDestination(
+                      BottomNavigationBarItem(
                         icon: Icon(tab.icon),
-                        selectedIcon: Icon(
+                        activeIcon: Icon(
                           tab.selectedIcon,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         label: tab.label,
                       ),
                   ],
-                  selectedIndex: widget.navShell.currentIndex,
-                  onDestinationSelected: (index) => widget.navShell.goBranch(index),
+                  currentIndex: widget.navShell.currentIndex,
+                  onTap: (index) => widget.navShell.goBranch(index),
                 ),
               ],
             );

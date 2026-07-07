@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/tabs/sets/details/part_detail_dialog.dart';
@@ -27,14 +26,19 @@ class PartCard extends HookWidget {
     final startedColor = Theme.of(context).colorScheme.warning;
     final notStartedColor = Theme.of(context).colorScheme.surface;
 
-    final inputController = useTextEditingController(text: part.quantityFound.toString());
+    final inputController = useTextEditingController(
+      text: part.quantityFound.toString(),
+    );
 
     Future<void> updateQuantityFound(int quantity) async {
       if (quantity < 0 || quantity > part.quantityNeeded) {
         inputController.text = part.quantityFound.toString();
         return;
       }
-      await supabase.from('set_parts').update({'quantity_found': quantity}).eq('id', part.id);
+      await supabase
+          .from('set_parts')
+          .update({'quantity_found': quantity})
+          .eq('id', part.id);
     }
 
     Future<void> increaseQuantityFound() async {
@@ -68,14 +72,22 @@ class PartCard extends HookWidget {
           await showPartDetails(context);
         },
         child: YaruTile(
-          title: Text(part.name ?? 'Unknown Part', maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text('Found: ${part.quantityFound} / ${part.quantityNeeded}'),
+          title: Text(
+            part.name ?? 'Unknown Part',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            'Found: ${part.quantityFound} / ${part.quantityNeeded}',
+          ),
           leading: part.imgUrl != null
               ? CachedNetworkImage(
                   imageUrl: proxiedImageUrl(part.imgUrl!),
                   width: 50,
                   height: 50,
                   fit: BoxFit.contain,
+                  errorWidget: (context, url, error) =>
+                      const Icon(Icons.broken_image, color: Colors.grey),
                 )
               : const Icon(Icons.extension),
           trailing: Row(
