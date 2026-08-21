@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
@@ -16,8 +17,6 @@ class DetailsPage extends HookConsumerWidget {
   DetailsPage({super.key, required this.setId});
 
   final String setId;
-
-  final GlobalKey _headerKey = GlobalKey();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,16 +44,6 @@ class DetailsPage extends HookConsumerWidget {
       return Color.lerp(scheme.warning, scheme.success, t)!;
     }, [progress]);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _headerKey.currentContext;
-      if (context != null) {
-        final height = context.size?.height;
-        if (height != null && height != headerHeight.value) {
-          headerHeight.value = height;
-        }
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Details'),
@@ -80,152 +69,160 @@ class DetailsPage extends HookConsumerWidget {
               final width = constraints.maxWidth;
               final crossAxisCount = width < 600 ? 1 : (width / 300).floor().clamp(2, 6);
 
-              final headerCard = Card(
-                margin: const .all(8),
-                child: Padding(
-                  padding: const .all(16),
-                  child: Column(
-                    crossAxisAlignment: .stretch,
-                    mainAxisAlignment: .start,
-                    children: [
-                      Row(
-                        children: [
-                          if (set.imgUrl != null)
-                            CachedNetworkImage(
-                              imageUrl: proxiedImageUrl(set.imgUrl!),
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
+              const headerExtentPadding = 4.0;
+
+              final headerCard = MeasureSize(
+                onChange: (size) {
+                  final contentHeight = (size.height - headerExtentPadding).clamp(
+                    0.0,
+                    double.infinity,
+                  );
+                  if (contentHeight > 0 && contentHeight != headerHeight.value) {
+                    headerHeight.value = contentHeight;
+                  }
+                },
+                child: Card(
+                  margin: const .all(8),
+                  child: Padding(
+                    padding: const .all(16),
+                    child: Column(
+                      crossAxisAlignment: .stretch,
+                      mainAxisAlignment: .start,
+                      children: [
+                        Row(
+                          children: [
+                            if (set.imgUrl != null)
+                              CachedNetworkImage(
+                                imageUrl: proxiedImageUrl(set.imgUrl!),
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: .start,
+                                mainAxisAlignment: .center,
+                                children: [
+                                  Text(
+                                    set.name,
+                                    style: Theme.of(context).textTheme.headlineSmall,
+                                    maxLines: 2,
+                                    overflow: .ellipsis,
+                                  ),
+                                  Text('Set: ${set.setNum}'),
+                                  Text('Year: ${set.year ?? "Unknown"}'),
+                                  Text('Parts: ${partsAsync.value?.length ?? "Unknown"}'),
+                                ],
+                              ),
                             ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: .start,
-                              mainAxisAlignment: .center,
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  set.name,
-                                  style: Theme.of(context).textTheme.headlineSmall,
-                                  maxLines: 2,
-                                  overflow: .ellipsis,
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final key = bricksetApiKey.value;
+                                    if (key == null || key.isEmpty) {
+                                      showSnack(context, 'Please set Brickset API Key in settings');
+                                      return;
+                                    }
+                                    try {
+                                      final url = await bricksetApi.getInstructions2(
+                                        key,
+                                        set.setNum,
+                                      );
+
+                                      await launchUrl(Uri.parse(url));
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        showSnack(context, 'Error: $e');
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.menu_book),
+                                  label: const Text('Instructions'),
                                 ),
-                                Text('Set: ${set.setNum}'),
-                                Text('Year: ${set.year ?? "Unknown"}'),
-                                Text('Parts: ${partsAsync.value?.length ?? "Unknown"}'),
+                                const SizedBox(height: 8),
+                                YaruPopupMenuButton<LegoSetStatus>(
+                                  initialValue: set.status,
+                                  onSelected: (LegoSetStatus? newValue) {
+                                    if (newValue != null) {
+                                      updateSetStatus(set.id, newValue);
+                                    }
+                                  },
+                                  itemBuilder: (context) {
+                                    return [
+                                      for (final value in LegoSetStatus.values)
+                                        PopupMenuItem(value: value, child: Text(value.name)),
+                                    ];
+                                  },
+                                  child: Text(set.status.name),
+                                ),
                               ],
                             ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  final key = bricksetApiKey.value;
-                                  if (key == null || key.isEmpty) {
-                                    showSnack(context, 'Please set Brickset API Key in settings');
-                                    return;
-                                  }
-                                  try {
-                                    final url = await bricksetApi.getInstructions2(key, set.setNum);
-
-                                    await launchUrl(Uri.parse(url));
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      showSnack(context, 'Error: $e');
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.menu_book),
-                                label: const Text('Instructions'),
-                              ),
-                              const SizedBox(height: 8),
-                              YaruPopupMenuButton<LegoSetStatus>(
-                                initialValue: set.status,
-                                onSelected: (LegoSetStatus? newValue) {
-                                  if (newValue != null) {
-                                    updateSetStatus(set.id, newValue);
-                                  }
-                                },
-                                itemBuilder: (context) {
-                                  return [
-                                    for (final value in LegoSetStatus.values)
-                                      PopupMenuItem(value: value, child: Text(value.name)),
-                                  ];
-                                },
-                                child: Text(set.status.name),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Padding(
-                        padding: const .only(top: 16),
-                        child: YaruLinearProgressIndicator(
-                          value: progress,
-                          semanticsLabel: 'Progress',
-                          strokeWidth: 8,
-                          color: progressBarColor,
+                          ],
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: const .only(top: 16),
+                          child: YaruLinearProgressIndicator(
+                            value: progress,
+                            semanticsLabel: 'Progress',
+                            strokeWidth: 8,
+                            color: progressBarColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
 
-              return Stack(
-                children: [
-                  Offstage(
-                    child: SingleChildScrollView(
-                      child: Container(
-                        width: width,
-                        padding: EdgeInsets.zero,
-                        child: Container(key: _headerKey, child: headerCard),
-                      ),
+              final headerExtent = headerHeight.value + headerExtentPadding;
+
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    automaticallyImplyLeading: false,
+                    expandedHeight: headerExtent,
+                    collapsedHeight: headerExtent,
+                    toolbarHeight: headerExtent,
+                    elevation: 0,
+                    floating: true,
+                    snap: true,
+                    flexibleSpace: Align(
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(width: width, child: headerCard),
                     ),
                   ),
-                  CustomScrollView(
-                    slivers: [
-                      SliverAppBar(
-                        automaticallyImplyLeading: false,
-                        expandedHeight: headerHeight.value,
-                        collapsedHeight: headerHeight.value,
-                        toolbarHeight: headerHeight.value,
-                        elevation: 0,
-                        floating: true,
-                        snap: true,
-                        flexibleSpace: headerCard,
-                      ),
-                      partsAsync.when(
-                        data: (parts) {
-                          if (parts.isEmpty) {
-                            return const SliverFillRemaining(
-                              child: Center(child: Text('No parts found for this set')),
-                            );
-                          }
-                          return SliverPadding(
-                            padding: const EdgeInsets.all(16),
-                            sliver: SliverGrid(
-                              delegate: SliverChildBuilderDelegate((context, index) {
-                                final part = parts[index];
-                                return PartCard(part: part);
-                              }, childCount: parts.length),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio: 16 / 3,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
-                            ),
-                          );
-                        },
-                        loading: () => const SliverFillRemaining(
-                          child: Center(child: CircularProgressIndicator()),
+                  partsAsync.when(
+                    data: (parts) {
+                      if (parts.isEmpty) {
+                        return const SliverFillRemaining(
+                          child: Center(child: Text('No parts found for this set')),
+                        );
+                      }
+                      return SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverGrid(
+                          delegate: SliverChildBuilderDelegate((context, index) {
+                            final part = parts[index];
+                            return PartCard(key: ValueKey(part.id), part: part);
+                          }, childCount: parts.length),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: 16 / 3,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                         ),
-                        error: (error, stack) => SliverFillRemaining(
-                          child: Center(child: Text('Error loading parts: $error')),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
+                    loading: () => const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (error, stack) => SliverFillRemaining(
+                      child: Center(child: Text('Error loading parts: $error')),
+                    ),
                   ),
                 ],
               );
@@ -236,5 +233,35 @@ class DetailsPage extends HookConsumerWidget {
         error: (error, stack) => Center(child: Text('Error loading set: $error')),
       ),
     );
+  }
+}
+
+class MeasureSize extends SingleChildRenderObjectWidget {
+  const MeasureSize({super.key, required this.onChange, super.child});
+
+  final ValueChanged<Size> onChange;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _MeasureSizeRenderObject(onChange);
+
+  @override
+  void updateRenderObject(BuildContext context, covariant _MeasureSizeRenderObject renderObject) {
+    renderObject.onChange = onChange;
+  }
+}
+
+class _MeasureSizeRenderObject extends RenderProxyBox {
+  _MeasureSizeRenderObject(this.onChange);
+
+  ValueChanged<Size> onChange;
+  Size? _oldSize;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final newSize = child?.size ?? Size.zero;
+    if (_oldSize == newSize) return;
+    _oldSize = newSize;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onChange(newSize));
   }
 }

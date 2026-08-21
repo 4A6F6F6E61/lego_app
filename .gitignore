@@ -49,3 +49,6 @@ app.*.map.json
 *.g.dart
 
 dist
+
+# FVM Version Cache
+.fvm/

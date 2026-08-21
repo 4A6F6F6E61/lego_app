@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:yaru/yaru.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ConfirmActionDialog extends StatelessWidget {
   const ConfirmActionDialog({super.key, required this.title, required this.content});
@@ -10,17 +9,7 @@ class ConfirmActionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      titlePadding: .zero,
-      title: YaruDialogTitleBar(
-        leading: const Center(
-          child: SizedBox.square(
-            dimension: 25,
-            child: YaruCircularProgressIndicator(strokeWidth: 3),
-          ),
-        ),
-        title: Text(title),
-        isClosable: false,
-      ),
+      title: Text(title),
       content: Text(content),
       actions: [
         OutlinedButton(

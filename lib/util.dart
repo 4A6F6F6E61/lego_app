@@ -1,6 +1,6 @@
 import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lego_app/api.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/lego_set.dart';

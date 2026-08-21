@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yaru/yaru.dart';
 
@@ -24,21 +24,9 @@ class Tab {
 
 class _NavigationPageState extends State<NavigationPage> {
   final _tabs = <Tab>[
-    Tab(
-      icon: Icons.dashboard,
-      selectedIcon: Icons.dashboard,
-      label: 'Dashboard',
-    ),
-    Tab(
-      icon: YaruIcons.home,
-      selectedIcon: YaruIcons.home_filled,
-      label: 'Sets',
-    ),
-    Tab(
-      icon: YaruIcons.settings,
-      selectedIcon: YaruIcons.settings_filled,
-      label: 'Settings',
-    ),
+    Tab(icon: Icons.dashboard, selectedIcon: Icons.dashboard, label: 'Dashboard'),
+    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Sets'),
+    Tab(icon: YaruIcons.settings, selectedIcon: YaruIcons.settings_filled, label: 'Settings'),
   ];
   @override
   Widget build(BuildContext context) {
@@ -64,8 +52,7 @@ class _NavigationPageState extends State<NavigationPage> {
                       ),
                   ],
                   selectedIndex: widget.navShell.currentIndex,
-                  onDestinationSelected: (index) =>
-                      widget.navShell.goBranch(index),
+                  onDestinationSelected: (index) => widget.navShell.goBranch(index),
                   minExtendedWidth: 180,
                   extended: true,
                 ),

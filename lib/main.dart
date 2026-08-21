@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,9 +58,7 @@ class App extends StatelessWidget {
       darkTheme = darkTheme.copyWith(
         scaffoldBackgroundColor: black,
         appBarTheme: AppBarThemeData(backgroundColor: black),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: black,
-        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(backgroundColor: black),
       );
     }
 
@@ -94,11 +92,13 @@ class _App extends StatelessWidget {
     return MaterialApp.router(
       title: 'Lego App',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      themeMode: themeMode,
-      darkTheme: darkTheme,
-      highContrastTheme: highContrastDarkTheme,
-      highContrastDarkTheme: highContrastDarkTheme,
+      // theme: lightTheme,
+      // themeMode: themeMode,
+      // darkTheme: darkTheme,
+      // highContrastTheme: highContrastDarkTheme,
+      // highContrastDarkTheme: highContrastDarkTheme,
+      themeMode: ThemeMode.dark,
+      theme: ThemeData.dark(useMaterial3: true),
       routerConfig: router,
       builder: (context, child) {
         // Add fake safe area padding on desktop platforms and web
@@ -106,9 +106,7 @@ class _App extends StatelessWidget {
         if (kIsWeb) {
           return MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(
-                bottom: 24.0,
-              ),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
               padding: existingMediaQuery.padding.copyWith(bottom: 24.0),
               textScaleFactor: 0.85,
             ),
@@ -121,9 +119,7 @@ class _App extends StatelessWidget {
             defaultTargetPlatform == TargetPlatform.fuchsia) {
           return MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(
-                bottom: 34.0,
-              ),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 34.0),
             ),
             child: child ?? const SizedBox(),
           );
