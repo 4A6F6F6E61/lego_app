@@ -1,19 +1,18 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
+import 'package:lego_app/components/confirm_action_dialog.dart';
 import 'package:lego_app/db/db.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/settings/login_modal.dart';
 import 'package:lego_app/util.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:yaru/yaru.dart';
 
 class SettingsPage extends HookConsumerWidget {
   const SettingsPage({super.key});
-
-  final double _width = 200.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,422 +20,439 @@ class SettingsPage extends HookConsumerWidget {
     final userTokenAsync = ref.watch(userTokenProvider);
     final rebrickableAPIKey = ref.watch(rebrickableApiKeyProvider);
     final bricksetAPIKey = ref.watch(bricksetApiKeyProvider);
+    final theme = Theme.of(context);
 
     final rbApiKeyTC = useTextEditingController();
     final bsApiKeyTC = useTextEditingController();
 
+    final rbObscure = useState(true);
+    final bsObscure = useState(true);
     final syncLoading = useState(false);
 
     useEffect(() {
       rbApiKeyTC.text = rebrickableAPIKey.value ?? '';
       bsApiKeyTC.text = bricksetAPIKey.value ?? '';
       return null;
-    }, [rebrickableAPIKey, bricksetAPIKey]);
+    }, [rebrickableAPIKey.value, bricksetAPIKey.value]);
 
-    void signOut() async {
-      showDialog(
+    Future<void> signOut() async {
+      final confirm = await showDialog<bool>(
         context: context,
-        builder: (_) {
-          return AlertDialog(
-            title: const Text('Sign out'),
-            content: const Text('Are you sure you want to sign out?'),
-            actions: [
-              TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
-              ElevatedButton(
-                onPressed: () async {
-                  await supabase.auth.signOut();
-                  if (context.mounted) {
-                    context.pop();
-                  }
-                },
-                child: const Text('Sign out'),
-              ),
-            ],
-          );
-        },
+        builder: (_) => const ConfirmActionDialog(
+          title: 'Sign Out',
+          content: 'Are you sure you want to sign out of your account?',
+          confirmLabel: 'Sign Out',
+          isDestructive: true,
+        ),
       );
+
+      if (confirm == true) {
+        await supabase.auth.signOut();
+        if (context.mounted) context.go('/auth');
+      }
     }
 
-    const contentWidth = 700.0;
-    final tiles = [
-      YaruTile(
-        title: const Text('Rebrickable Synchronization'),
-        subtitle: const Text('Login and Synchronize your collection with Rebrickable'),
-        trailing: userTokenAsync.when(
-          data: (token) => token == null
-              ? ElevatedButton(
-                  onPressed: () async {
-                    final token = await showDialog<String>(
-                      context: context,
-                      builder: (_) {
-                        return LoginModal(
-                          login: (String username, String password) async {
-                            if (username.isEmpty || password.isEmpty) {
-                              throw 'Please enter both username and password';
-                            }
-
-                            return await userApi.tokenCreate(
-                              apiKey: rebrickableAPIKey.value ?? '',
-                              username: username,
-                              password: password,
-                            );
-                          },
-                        );
-                      },
-                    );
-                    if (token != null) {
-                      await ref.read(userTokenProvider.notifier).set(token);
-                    }
-                  },
-                  child: const Text('Authenticate'),
-                )
-              : YaruSplitButton(
-                  menuWidth: _width,
-                  onPressed: () async {
-                    if (rebrickableAPIKey.value == null) {
-                      showSnack(context, 'Please enter your Rebrickable API Key first.');
-                      return;
-                    }
-                    syncLoading.value = true;
-                    showSnack(
-                      context,
-                      "Synchronization started... this may take a while, since Rebrickable will rate limit requests after a while.",
-                    );
-                    try {
-                      await syncRebrickable(apiKey: rebrickableAPIKey.value!, userToken: token);
-                    } catch (e) {
-                      if (context.mounted) {
-                        showSnack(context, 'Synchronization failed: $e');
-                        rethrow;
-                      }
-                    } finally {
-                      syncLoading.value = false;
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Synchronization Complete'),
-                              content: const Text(
-                                'Your collection has been synchronized successfully.',
-                              ),
-                              actions: [
-                                TextButton(onPressed: context.pop, child: const Text('OK')),
-                              ],
-                            );
-                          },
-                        );
-                      }
-                    }
-                  },
-                  items: [
-                    PopupMenuItem(
-                      child: const Text('Clear Token'),
-                      onTap: () async {
-                        await ref.read(userTokenProvider.notifier).clear();
-                      },
-                    ),
-                  ],
-                  child: syncLoading.value
-                      ? SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Sync'),
-                ),
-          loading: () => const CircularProgressIndicator(),
-          error: (err, stack) => const Icon(Icons.error),
-        ),
-      ),
-      YaruTile(
-        title: const Text('Rebrickable API Key'),
-        subtitle: const Text('Your Rebrickable API Key for accessing the API'),
-        trailing: Expanded(
-          child: TextFormField(
-            controller: rbApiKeyTC,
-            decoration: const InputDecoration(hintText: 'Enter your Rebrickable API Key'),
-            obscureText: true,
-            onFieldSubmitted: (value) async {
-              await ref.read(rebrickableApiKeyProvider.notifier).set(value);
-            },
-          ),
-        ),
-      ),
-      YaruTile(
-        title: const Text('Brickset API Key'),
-        subtitle: const Text('Your Brickset API Key for accessing the API'),
-        trailing: Expanded(
-          child: TextFormField(
-            controller: bsApiKeyTC,
-            decoration: const InputDecoration(hintText: 'Enter your Brickset API Key'),
-            obscureText: true,
-            onFieldSubmitted: (value) async {
-              await ref.read(bricksetApiKeyProvider.notifier).set(value);
-            },
-          ),
-        ),
-      ),
-    ];
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: YaruBorderContainer(
-                width: contentWidth,
-                margin: const EdgeInsets.all(kYaruPagePadding),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: tiles.length,
-                  itemBuilder: (context, index) =>
-                      Padding(padding: const EdgeInsets.all(5.0), child: tiles.elementAt(index)),
-                  separatorBuilder: (context, index) =>
-                      index != tiles.length - 1 ? const Divider() : const SizedBox.shrink(),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 200,
-              child: ElevatedButton(onPressed: signOut, child: const Text('Sign out')),
-            ),
-            if (packageInfo.hasData)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  'Version: ${packageInfo.data!.version}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/*
-import 'package:material_ui/material_ui.dart';
-import 'package:yaru/yaru.dart';
-
-class SplitButtonPage extends StatefulWidget {
-  const SplitButtonPage({super.key});
-
-  @override
-  State<SplitButtonPage> createState() => _SplitButtonPageState();
-}
-
-class _SplitButtonPageState extends State<SplitButtonPage> {
-  double _width = 200.0;
-
-  @override
-  Widget build(BuildContext context) {
-    const contentWidth = 500.0;
-    const spacing = 16.0;
-    final items = List.generate(10, (index) {
-      final text =
-          '${index.isEven ? 'Super long action name' : 'action'} ${index + 1}';
-      return PopupMenuItem(
-        child: Text(text, overflow: TextOverflow.ellipsis),
-        onTap: () => ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(text))),
+    Future<void> startRebrickableSync(String token) async {
+      if (rebrickableAPIKey.value == null || rebrickableAPIKey.value!.isEmpty) {
+        showSnack(context, 'Please enter your Rebrickable API Key first.');
+        return;
+      }
+      syncLoading.value = true;
+      showSnack(
+        context,
+        'Synchronization started... this may take a moment to fetch sets and parts.',
       );
-    });
-
-    final tiles = [
-      YaruTile(
-        title: const Text('YaruSplitButton()'),
-        subtitle: const Text('Regular version'),
-        trailing: YaruSplitButton(
-          menuWidth: _width,
-          onPressed: () => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-          items: items,
-          child: const Text('Main Action'),
-        ),
-      ),
-      YaruTile(
-        title: const Text('YaruSplitButton'),
-        subtitle: const Text('.filled()'),
-        trailing: YaruSplitButton.filled(
-          menuWidth: _width,
-          onPressed: () => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-          items: items,
-          child: const Text('Main Action'),
-        ),
-      ),
-      YaruTile(
-        title: const Text('YaruSplitButton'),
-        subtitle: const Text('outlined()'),
-        trailing: YaruSplitButton.outlined(
-          menuWidth: _width,
-          onPressed: () => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-          items: items,
-          child: const Text('Main Action'),
-        ),
-      ),
-      YaruTile(
-        title: const Text('YaruSplitButton'),
-        subtitle: const Text('items: null, onOptionPressed: null'),
-        trailing: YaruSplitButton(
-          menuWidth: _width,
-          child: const Text('Main Action'),
-          onPressed: () => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-        ),
-      ),
-      YaruTile(
-        title: const Text('YaruSplitButton'),
-        subtitle: const Text('onPressed: null'),
-        trailing: YaruSplitButton(
-          menuWidth: _width,
-          items: items,
-          child: const Text('Main Action'),
-        ),
-      ),
-      YaruTile(
-        title: const Text('YaruSplitButton'),
-        subtitle: const Text(
-          'items: null, onOptionPressed: null, onPressed: null',
-        ),
-        trailing: YaruSplitButton(
-          menuWidth: _width,
-          child: const Text('Main Action'),
-        ),
-      ),
-    ];
-
-    final rows = [
-      Row(
-        children: [
-          const Text('Normal alignment'),
-          const SizedBox(width: spacing),
-          YaruSplitButton.outlined(
-            onPressed: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-            items: items.sublist(0, 3),
-            child: const Text('Main Action'),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          const Text('Normal alignment with width'),
-          const SizedBox(width: spacing),
-          YaruSplitButton.outlined(
-            menuWidth: _width,
-            onPressed: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-            items: items.sublist(0, 3),
-            child: const Text('Main Action'),
-          ),
-        ],
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Space between alignment'),
-          const SizedBox(width: spacing),
-          YaruSplitButton.outlined(
-            onPressed: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-            items: items.sublist(0, 3),
-            child: const Text('Main Action'),
-          ),
-          const Text('Trailing'),
-        ],
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Center alignment'),
-          const SizedBox(width: spacing),
-          YaruSplitButton.outlined(
-            onPressed: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Main Action'))),
-            items: items.sublist(0, 3),
-            child: const Text('Main Action'),
-          ),
-        ],
-      ),
-    ];
-
-    final row = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('Menu width: ${_width.toInt()}'),
-        Expanded(
-          child: Slider(
-            min: 100,
-            max: 500,
-            value: _width,
-            onChanged: (v) => setState(() => _width = v),
-          ),
-        ),
-      ],
-    );
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(width: contentWidth, child: row),
-          const SizedBox(height: spacing),
-          const Text('Yaru Tiles'),
-          Flexible(
-            child: YaruBorderContainer(
-              width: contentWidth,
-              margin: const EdgeInsets.all(kYaruPagePadding),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: tiles.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: tiles.elementAt(index),
+      try {
+        await syncRebrickable(apiKey: rebrickableAPIKey.value!, userToken: token);
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => M3EDialog(
+              title: 'Synchronization Complete',
+              content: const Text('Your LEGO collection has been synchronized successfully.'),
+              actions: [
+                M3EButton.filled(
+                  onPressed: () => ctx.pop(),
+                  child: const Text('Great!'),
                 ),
-                separatorBuilder: (context, index) => index != tiles.length - 1
-                    ? const Divider()
-                    : const SizedBox.shrink(),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: spacing),
-          const Text('Normal rows'),
-          Flexible(
-            child: YaruBorderContainer(
-              width: contentWidth,
-              margin: const EdgeInsets.all(kYaruPagePadding),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: rows.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: rows.elementAt(index),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          showSnack(context, 'Synchronization failed: $e');
+        }
+      } finally {
+        syncLoading.value = false;
+      }
+    }
+
+    final currentUser = supabase.auth.currentUser;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            children: [
+              // User Session Card
+              if (currentUser != null) ...[
+                M3ECard(
+                  variant: M3ECardVariant.filled,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          radius: 24,
+                          child: Text(
+                            (currentUser.email?.isNotEmpty == true)
+                                ? currentUser.email![0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                currentUser.email ?? 'Signed In',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Account Connected',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF10B981),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        M3EButton.outlined(
+                          onPressed: signOut,
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                separatorBuilder: (context, index) => index != rows.length - 1
-                    ? const Divider()
-                    : const SizedBox.shrink(),
+                const SizedBox(height: 20),
+              ],
+
+              // Rebrickable Integration Card
+              M3ECard(
+                variant: M3ECardVariant.filled,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0266C8).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.sync_rounded, color: Color(0xFF0266C8), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Rebrickable Integration',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Synchronize your sets, parts, and wanted lists',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          userTokenAsync.when(
+                            data: (token) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: token != null
+                                    ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                    : theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                token != null ? 'Connected' : 'Not Linked',
+                                style: TextStyle(
+                                  color: token != null
+                                      ? const Color(0xFF10B981)
+                                      : theme.colorScheme.outline,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            loading: () => const SizedBox.shrink(),
+                            error: (err, stack) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      M3ETextField(
+                        controller: rbApiKeyTC,
+                        label: 'Rebrickable API Key',
+                        obscureText: rbObscure.value,
+                        leading: const Icon(Icons.key_rounded),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                rbObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                size: 18,
+                              ),
+                              onPressed: () => rbObscure.value = !rbObscure.value,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
+                              onPressed: () async {
+                                await ref.read(rebrickableApiKeyProvider.notifier).set(rbApiKeyTC.text.trim());
+                                if (context.mounted) showSnack(context, 'Rebrickable API Key saved');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      userTokenAsync.when(
+                        data: (token) => token == null
+                            ? M3EButton.tonal(
+                                onPressed: () async {
+                                  final newToken = await showDialog<String>(
+                                    context: context,
+                                    builder: (_) => LoginModal(
+                                      login: (String u, String p) async {
+                                        return await userApi.tokenCreate(
+                                          apiKey: rebrickableAPIKey.value ?? '',
+                                          username: u,
+                                          password: p,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                  if (newToken != null) {
+                                    await ref.read(userTokenProvider.notifier).set(newToken);
+                                  }
+                                },
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.login_rounded, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Authenticate with Rebrickable'),
+                                  ],
+                                ),
+                              )
+                            : Row(
+                                children: [
+                                  M3EButton.filled(
+                                    onPressed: syncLoading.value ? () {} : () => startRebrickableSync(token),
+                                    child: syncLoading.value
+                                        ? const SizedBox.square(
+                                            dimension: 16,
+                                            child: M3EProgressIndicator.circular(),
+                                          )
+                                        : const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.sync_rounded, size: 16),
+                                              SizedBox(width: 8),
+                                              Text('Sync Now'),
+                                            ],
+                                          ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  M3EButton.text(
+                                    onPressed: () async {
+                                      await ref.read(userTokenProvider.notifier).clear();
+                                      if (context.mounted) showSnack(context, 'Token cleared');
+                                    },
+                                    child: const Text('Disconnect Account'),
+                                  ),
+                                ],
+                              ),
+                        loading: () => const M3EProgressIndicator.circular(),
+                        error: (err, stack) => Text('Error: $err'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 20),
+
+              // Brickset Integration Card
+              M3ECard(
+                variant: M3ECardVariant.filled,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.menu_book_rounded, color: Color(0xFFF59E0B), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Brickset Integration',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Required to view PDF building instructions directly in-app',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      M3ETextField(
+                        controller: bsApiKeyTC,
+                        label: 'Brickset API Key',
+                        obscureText: bsObscure.value,
+                        leading: const Icon(Icons.vpn_key_outlined),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                bsObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                size: 18,
+                              ),
+                              onPressed: () => bsObscure.value = !bsObscure.value,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
+                              onPressed: () async {
+                                await ref.read(bricksetApiKeyProvider.notifier).set(bsApiKeyTC.text.trim());
+                                if (context.mounted) showSnack(context, 'Brickset API Key saved');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // About & App Information Card
+              M3ECard(
+                variant: M3ECardVariant.outlined,
+                child: Padding(
+                  padding: const EdgeInsets.all(18.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'LEGO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'LEGO Set & Parts Rebuilder Tracker',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Powered by Material 3 Expressive. LEGO® is a trademark of the LEGO Group of companies which does not sponsor, authorize or endorse this application.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (packageInfo.hasData) ...[
+                        const Divider(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Version',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            Text(
+                              'v${packageInfo.data!.version}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
-*/

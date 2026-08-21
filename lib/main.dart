@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lego_app/router.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yaru/yaru.dart';
 
@@ -26,8 +27,8 @@ Future<void> main() async {
 
   if (!Platform.isAndroid && !Platform.isIOS) {
     doWhenWindowReady(() {
-      appWindow.minSize = Size(150, 100);
-      appWindow.size = Size(1280, 720);
+      appWindow.minSize = const Size(360, 480);
+      appWindow.size = const Size(1280, 760);
       appWindow.alignment = Alignment.center;
       appWindow.show();
     });
@@ -37,94 +38,88 @@ Future<void> main() async {
 class App extends StatelessWidget {
   const App({super.key});
 
+  static const seedColor = Color(0xFF0266C8); // Expressive Lego Cobalt Blue
+
   @override
   Widget build(BuildContext context) {
-    YaruVariant defaultVariant = YaruVariant.adwaitaRed;
-    var darkTheme = defaultVariant.darkTheme;
-    if (!kIsWeb && Platform.isLinux) {
-      return YaruTheme(
-        builder: (context, yaru, child) => _App(
-          themeMode: .system,
-          lightTheme: defaultVariant.theme,
-          darkTheme: darkTheme,
-          highContrastTheme: yaruHighContrastLight,
-          highContrastDarkTheme: yaruHighContrastDark,
+    final darkM3ETheme = M3EThemeData.dark(seedColor: seedColor);
+    final lightM3ETheme = M3EThemeData.light(seedColor: seedColor);
+
+    final darkMaterialTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorSchemeSeed: seedColor,
+      scaffoldBackgroundColor: const Color(0xFF13151A),
+      cardTheme: const CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
-      );
-    }
-    const black = Color(0x00000000);
-
-    if (Platform.isAndroid || Platform.isIOS) {
-      darkTheme = darkTheme.copyWith(
-        scaffoldBackgroundColor: black,
-        appBarTheme: AppBarThemeData(backgroundColor: black),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(backgroundColor: black),
-      );
-    }
-
-    return _App(
-      themeMode: .system,
-      lightTheme: defaultVariant.theme,
-      darkTheme: darkTheme,
-      highContrastTheme: yaruHighContrastLight,
-      highContrastDarkTheme: yaruHighContrastDark,
+      ),
+      appBarTheme: const AppBarThemeData(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+      ),
     );
-  }
-}
 
-class _App extends StatelessWidget {
-  const _App({
-    required this.themeMode,
-    required this.lightTheme,
-    required this.darkTheme,
-    required this.highContrastTheme,
-    required this.highContrastDarkTheme,
-  });
+    final lightMaterialTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorSchemeSeed: seedColor,
+      scaffoldBackgroundColor: const Color(0xFFF7F8FC),
+      cardTheme: const CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      appBarTheme: const AppBarThemeData(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+      ),
+    );
 
-  final ThemeData? lightTheme;
-  final ThemeData? darkTheme;
-  final ThemeData? highContrastTheme;
-  final ThemeData? highContrastDarkTheme;
-  final ThemeMode themeMode;
-
-  @override
-  Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Lego App',
+      title: 'Lego Tracker',
       debugShowCheckedModeBanner: false,
-      // theme: lightTheme,
-      // themeMode: themeMode,
-      // darkTheme: darkTheme,
-      // highContrastTheme: highContrastDarkTheme,
-      // highContrastDarkTheme: highContrastDarkTheme,
       themeMode: ThemeMode.dark,
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: lightMaterialTheme,
+      darkTheme: darkMaterialTheme,
       routerConfig: router,
       builder: (context, child) {
-        // Add fake safe area padding on desktop platforms and web
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final currentM3ETheme = isDark ? darkM3ETheme : lightM3ETheme;
+
         final existingMediaQuery = MediaQuery.of(context);
+        Widget responsiveChild = child ?? const SizedBox();
+
         if (kIsWeb) {
-          return MediaQuery(
+          responsiveChild = MediaQuery(
             data: existingMediaQuery.copyWith(
               viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
               padding: existingMediaQuery.padding.copyWith(bottom: 24.0),
-              textScaleFactor: 0.85,
+              textScaler: const TextScaler.linear(0.9),
             ),
-            child: child ?? const SizedBox(),
+            child: responsiveChild,
           );
-        }
-        if (defaultTargetPlatform == TargetPlatform.linux ||
+        } else if (defaultTargetPlatform == TargetPlatform.linux ||
             defaultTargetPlatform == TargetPlatform.macOS ||
             defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.fuchsia) {
-          return MediaQuery(
+          responsiveChild = MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 34.0),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
             ),
-            child: child ?? const SizedBox(),
+            child: responsiveChild,
           );
         }
-        return child ?? const SizedBox();
+
+        return M3ETheme(
+          data: currentM3ETheme,
+          child: responsiveChild,
+        );
       },
     );
   }

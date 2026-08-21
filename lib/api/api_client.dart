@@ -78,7 +78,7 @@ Future<dynamic> apiPost(
   Object? payload = body;
   if (form) {
     h['Content-Type'] = 'application/x-www-form-urlencoded';
-    if (body is Map) payload = _formEncode(body as Map);
+    if (body is Map) payload = _formEncode(body);
   } else {
     if (body != null) {
       h['Content-Type'] = 'application/json';
@@ -103,7 +103,7 @@ Future<dynamic> apiPut(
   Object? payload = body;
   if (form) {
     h['Content-Type'] = 'application/x-www-form-urlencoded';
-    if (body is Map) payload = _formEncode(body as Map);
+    if (body is Map) payload = _formEncode(body);
   } else {
     if (body != null) {
       h['Content-Type'] = 'application/json';

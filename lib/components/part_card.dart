@@ -1,13 +1,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
+import 'package:lego_app/providers/rebrickable_providers.dart';
 import 'package:lego_app/tabs/sets/details/part_detail_dialog.dart';
 import 'package:lego_app/util.dart';
-import 'package:yaru/yaru.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart';
 
-class PartCard extends HookWidget {
+class PartCard extends HookConsumerWidget {
   const PartCard({super.key, required this.part});
 
   final SetPart part;
@@ -20,19 +22,38 @@ class PartCard extends HookWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final finishedColor = Colors.green;
-    final spareColor = Theme.of(context).colorScheme.error;
-    final startedColor = Colors.amber;
-    final notStartedColor = Theme.of(context).colorScheme.surface;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorsAsync = ref.watch(colorsProvider);
+
+    final isFinished = part.isFinished;
+    final isStarted = part.quantityFound > 0 && !isFinished;
+    final isSpare = part.isSpare;
+
+    final (statusColor, statusBgColor) = switch ((isFinished, isStarted, isSpare)) {
+      (true, _, _) => (
+        const Color(0xFF10B981),
+        const Color(0xFF10B981).withValues(alpha: 0.12),
+      ),
+      (_, true, _) => (
+        const Color(0xFFF59E0B),
+        const Color(0xFFF59E0B).withValues(alpha: 0.12),
+      ),
+      (_, _, true) => (
+        const Color(0xFFEF4444),
+        const Color(0xFFEF4444).withValues(alpha: 0.10),
+      ),
+      _ => (
+        theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        theme.colorScheme.surfaceContainer,
+      ),
+    };
 
     final inputController = useTextEditingController(text: part.quantityFound.toString());
     final focusNode = useFocusNode();
 
-    Future<void> updateQuantityFound(int quantity) {
-      if (quantity < 0) {
-        return Future.value();
-      }
+    Future<void> updateQuantity(int quantity) {
+      if (quantity < 0) return Future.value();
       return updatePartQuantityFound(part.id, quantity);
     }
 
@@ -51,7 +72,7 @@ class PartCard extends HookWidget {
           }
           final quantity = int.tryParse(raw);
           if (quantity != null) {
-            updateQuantityFound(quantity);
+            updateQuantity(quantity);
           } else {
             inputController.text = part.quantityFound.toString();
           }
@@ -62,110 +83,231 @@ class PartCard extends HookWidget {
       return () => focusNode.removeListener(handleFocusChange);
     });
 
-    Future<void> increaseQuantityFound() async {
-      if (part.isFinished) {
-        return;
-      }
-      inputController.text = (part.quantityFound + 1).toString();
-      await updateQuantityFound(part.quantityFound + 1);
+    Future<void> increaseQuantity() async {
+      if (part.isFinished) return;
+      final next = part.quantityFound + 1;
+      inputController.text = next.toString();
+      await updateQuantity(next);
     }
 
-    Future<void> decreaseQuantityFound() async {
-      if (part.quantityFound <= 0) {
-        return;
-      }
-      inputController.text = (part.quantityFound - 1).toString();
-      await updateQuantityFound(part.quantityFound - 1);
+    Future<void> decreaseQuantity() async {
+      if (part.quantityFound <= 0) return;
+      final prev = part.quantityFound - 1;
+      inputController.text = prev.toString();
+      await updateQuantity(prev);
     }
 
-    const borderRadius = BorderRadius.all(Radius.circular(8));
+    Color? legoColor;
+    String? colorName;
+    if (colorsAsync.hasValue) {
+      final colorInfo = colorsAsync.value![part.colorId];
+      if (colorInfo != null) {
+        colorName = colorInfo.name;
+        legoColor = Color(int.parse('FF${colorInfo.rgb}', radix: 16));
+      }
+    }
 
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: part.isFinished
-            ? finishedColor.withOpacity(0.2)
-            : part.quantityFound > 0
-            ? startedColor.withOpacity(0.2)
-            : part.isSpare
-            ? spareColor.withOpacity(0.2)
-            : notStartedColor.withOpacity(0.2),
-        border: Border.all(
-          color: part.isFinished
-              ? finishedColor
-              : part.quantityFound > 0
-              ? startedColor
-              : part.isSpare
-              ? spareColor
-              : notStartedColor,
-        ),
-        borderRadius: borderRadius,
-      ),
-      child: InkWell(
-        borderRadius: borderRadius,
-        onTap: () async {
-          await showPartDetails(context);
-        },
-        child: YaruTile(
-          title: Text(part.name ?? 'Unknown Part', maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text('Found: ${part.quantityFound} / ${part.quantityNeeded}'),
-          leading: part.imgUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: proxiedImageUrl(part.imgUrl!),
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.contain,
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.broken_image, color: Colors.grey),
-                )
-              : const Icon(Icons.extension),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: () async {
-                  await decreaseQuantityFound();
-                },
-              ),
-              SizedBox(
-                width: 55,
-                child: TextFormField(
-                  controller: inputController,
-                  focusNode: focusNode,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  onTap: () {
-                    if (inputController.text == '0') {
-                      inputController.text = '';
-                    }
-                  },
-                  onChanged: (value) async {
-                    final raw = value.trim();
-                    if (raw.isEmpty) {
-                      return;
-                    }
-                    final quantity = int.tryParse(raw);
-                    if (quantity != null) {
-                      await updateQuantityFound(quantity);
-                    }
-                  },
-                  onFieldSubmitted: (value) async {
-                    final quantity = int.tryParse(value.trim());
-                    if (quantity != null) {
-                      await updateQuantityFound(quantity);
-                    }
-                  },
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () async {
-                  await increaseQuantityFound();
-                },
-              ),
-            ],
+    return M3ECard(
+      variant: M3ECardVariant.filled,
+      padding: EdgeInsets.zero,
+      onPressed: () => showPartDetails(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: statusBgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: statusColor.withValues(alpha: isFinished || isStarted || isSpare ? 0.8 : 0.3),
+            width: isFinished || isStarted ? 1.5 : 1.0,
           ),
+        ),
+        child: Row(
+          children: [
+            // Left Part Image with Color Dot
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: part.imgUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: proxiedImageUrl(part.imgUrl!),
+                          fit: BoxFit.contain,
+                          placeholder: (context, url) => const Center(
+                            child: SizedBox.square(
+                              dimension: 16,
+                              child: M3EProgressIndicator.circular(),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.extension_outlined,
+                            size: 22,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : const Icon(Icons.extension_outlined, size: 22, color: Colors.grey),
+                ),
+                if (legoColor != null)
+                  Positioned(
+                    bottom: -2,
+                    right: -2,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: legoColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 3,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 10),
+
+            // Middle Part Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          part.name ?? 'Part #${part.id}',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isSpare) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'SPARE',
+                            style: TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      if (colorName != null) ...[
+                        Flexible(
+                          child: Text(
+                            colorName,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        '${part.quantityFound}/${part.quantityNeeded}',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (isFinished) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+
+            // Stepper Controls
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                M3EIconButton(
+                  variant: M3EIconButtonVariant.tonal,
+                  icon: const Icon(Icons.remove_rounded, size: 16),
+                  onPressed: part.quantityFound > 0 ? decreaseQuantity : () {},
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 36,
+                  child: TextFormField(
+                    controller: inputController,
+                    focusNode: focusNode,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      if (inputController.text == '0') inputController.text = '';
+                    },
+                    onChanged: (value) async {
+                      final raw = value.trim();
+                      if (raw.isNotEmpty) {
+                        final q = int.tryParse(raw);
+                        if (q != null) await updateQuantity(q);
+                      }
+                    },
+                    onFieldSubmitted: (value) async {
+                      final q = int.tryParse(value.trim());
+                      if (q != null) await updateQuantity(q);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                M3EIconButton(
+                  variant: isFinished ? M3EIconButtonVariant.tonal : M3EIconButtonVariant.filled,
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  onPressed: !isFinished ? increaseQuantity : () {},
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -1,20 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
+import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
+import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
-import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:yaru/yaru.dart';
 
 class DetailsPage extends HookConsumerWidget {
-  DetailsPage({super.key, required this.setId});
+  const DetailsPage({super.key, required this.setId});
 
   final String setId;
 
@@ -22,246 +22,460 @@ class DetailsPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setAsync = ref.watch(setStreamProvider(setId));
     final partsAsync = ref.watch(setPartsStreamProvider(setId));
-    final bricksetApiKey = ref.watch(bricksetApiKeyProvider);
+    final theme = Theme.of(context);
 
-    final headerHeight = useState<double>(170);
+    final searchQuery = useState<String>('');
+    final selectedFilter = useState<String>('all'); // all, missing, found, spares
+    final searchController = useTextEditingController();
 
     final progress = useMemoized(() {
       final parts = partsAsync.value;
       if (parts == null || parts.isEmpty) return 0.0;
       return calculateProgress(parts);
-    }, [partsAsync]);
+    }, [partsAsync.value]);
 
     final progressBarColor = useMemoized(() {
-      final scheme = Theme.of(context).colorScheme;
-      if (progress <= 0.0) return scheme.error;
-      if (progress >= 1.0) return scheme.success;
+      if (progress <= 0.0) return const Color(0xFFEF4444);
+      if (progress >= 1.0) return const Color(0xFF10B981);
       if (progress < 0.5) {
         final t = progress / 0.5;
-        return Color.lerp(scheme.error, scheme.warning, t)!;
+        return Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), t)!;
       }
       final t = (progress - 0.5) / 0.5;
-      return Color.lerp(scheme.warning, scheme.success, t)!;
+      return Color.lerp(const Color(0xFFF59E0B), const Color(0xFF10B981), t)!;
     }, [progress]);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Details'),
         actions: [
-          IconButton(
-            icon: const Icon(YaruIcons.view_more),
+          M3EIconButton(
+            variant: M3EIconButtonVariant.tonal,
+            icon: const Icon(Icons.more_horiz_rounded),
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                isDismissible: false,
+                isDismissible: true,
+                backgroundColor: Colors.transparent,
                 builder: (_) => OptionsModal(setId: setId),
               );
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: setAsync.when(
         data: (set) {
-          if (set == null) return const Center(child: Text('Set not found'));
+          if (set == null) {
+            return const Center(child: Text('Set not found'));
+          }
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final crossAxisCount = width < 600 ? 1 : (width / 300).floor().clamp(2, 6);
+          final allParts = partsAsync.value ?? <SetPart>[];
+          final totalNeeded = allParts.fold<int>(0, (sum, p) => p.isSpare ? sum : sum + p.quantityNeeded);
+          final totalFound = allParts.fold<int>(0, (sum, p) => p.isSpare ? sum : sum + p.quantityFound);
 
-              const headerExtentPadding = 4.0;
+          final query = searchQuery.value.trim().toLowerCase();
+          final filteredParts = allParts.where((part) {
+            // Search filter
+            if (query.isNotEmpty) {
+              final nameMatch = (part.name ?? '').toLowerCase().contains(query);
+              final idMatch = part.id.toString().contains(query);
+              if (!nameMatch && !idMatch) return false;
+            }
+            // Category filter
+            if (selectedFilter.value == 'missing') {
+              return !part.isFinished && !part.isSpare;
+            } else if (selectedFilter.value == 'found') {
+              return part.isFinished && !part.isSpare;
+            } else if (selectedFilter.value == 'spares') {
+              return part.isSpare;
+            }
+            return true;
+          }).toList();
 
-              final headerCard = MeasureSize(
-                onChange: (size) {
-                  final contentHeight = (size.height - headerExtentPadding).clamp(
-                    0.0,
-                    double.infinity,
-                  );
-                  if (contentHeight > 0 && contentHeight != headerHeight.value) {
-                    headerHeight.value = contentHeight;
-                  }
-                },
-                child: Card(
-                  margin: const .all(8),
-                  child: Padding(
-                    padding: const .all(16),
-                    child: Column(
-                      crossAxisAlignment: .stretch,
-                      mainAxisAlignment: .start,
-                      children: [
-                        Row(
-                          children: [
-                            if (set.imgUrl != null)
-                              CachedNetworkImage(
-                                imageUrl: proxiedImageUrl(set.imgUrl!),
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: .start,
-                                mainAxisAlignment: .center,
+          final missingCount = allParts.where((p) => !p.isFinished && !p.isSpare).length;
+          final foundCount = allParts.where((p) => p.isFinished && !p.isSpare).length;
+          final sparesCount = allParts.where((p) => p.isSpare).length;
+
+          return CustomScrollView(
+            slivers: [
+              // Hero Header Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: M3ECard(
+                    variant: M3ECardVariant.filled,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Top row: image + details + instructions
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isCompact = constraints.maxWidth < 600;
+                              final imageWidget = Container(
+                                width: isCompact ? 100 : 130,
+                                height: isCompact ? 100 : 130,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: set.imgUrl != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: proxiedImageUrl(set.imgUrl!),
+                                        fit: BoxFit.contain,
+                                        placeholder: (context, url) => const Center(
+                                          child: SizedBox.square(
+                                            dimension: 24,
+                                            child: M3EProgressIndicator.circular(),
+                                          ),
+                                        ),
+                                        errorWidget: (context, url, error) => const Icon(
+                                          Icons.extension_outlined,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
+                                      )
+                                    : const Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
+                              );
+
+                              final infoWidget = Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
                                     set.name,
-                                    style: Theme.of(context).textTheme.headlineSmall,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.2,
+                                    ),
                                     maxLines: 2,
-                                    overflow: .ellipsis,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  Text('Set: ${set.setNum}'),
-                                  Text('Year: ${set.year ?? "Unknown"}'),
-                                  Text('Parts: ${partsAsync.value?.length ?? "Unknown"}'),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'Set #${set.setNum}',
+                                          style: TextStyle(
+                                            color: theme.colorScheme.primary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      if (set.year != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'Year: ${set.year}',
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '${allParts.length} parts',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
-                              ),
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final key = bricksetApiKey.value;
-                                    if (key == null || key.isEmpty) {
-                                      showSnack(context, 'Please set Brickset API Key in settings');
-                                      return;
-                                    }
-                                    try {
-                                      final url = await bricksetApi.getInstructions2(
-                                        key,
-                                        set.setNum,
-                                      );
+                              );
 
-                                      await launchUrl(Uri.parse(url));
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        showSnack(context, 'Error: $e');
-                                      }
-                                    }
-                                  },
-                                  icon: const Icon(Icons.menu_book),
-                                  label: const Text('Instructions'),
-                                ),
-                                const SizedBox(height: 8),
-                                YaruPopupMenuButton<LegoSetStatus>(
-                                  initialValue: set.status,
-                                  onSelected: (LegoSetStatus? newValue) {
-                                    if (newValue != null) {
-                                      updateSetStatus(set.id, newValue);
-                                    }
-                                  },
-                                  itemBuilder: (context) {
-                                    return [
-                                      for (final value in LegoSetStatus.values)
-                                        PopupMenuItem(value: value, child: Text(value.name)),
-                                    ];
-                                  },
-                                  child: Text(set.status.name),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const .only(top: 16),
-                          child: YaruLinearProgressIndicator(
-                            value: progress,
-                            semanticsLabel: 'Progress',
-                            strokeWidth: 8,
-                            color: progressBarColor,
+                              if (isCompact) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        imageWidget,
+                                        const SizedBox(width: 16),
+                                        Expanded(child: infoWidget),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: M3EButton.tonal(
+                                        onPressed: () => _openInstructions(context, ref, set),
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.menu_book_rounded, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('View Instructions'),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                children: [
+                                  imageWidget,
+                                  const SizedBox(width: 20),
+                                  Expanded(child: infoWidget),
+                                  const SizedBox(width: 16),
+                                  M3EButton.tonal(
+                                    onPressed: () => _openInstructions(context, ref, set),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.menu_book_rounded, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Instructions'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+
+                          // Status Switcher Segmented Button
+                          Text(
+                            'Build Status',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.outline,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          M3ESegmentedButton<LegoSetStatus>(
+                            segments: const [
+                              M3ESegment(
+                                value: LegoSetStatus.backlog,
+                                label: 'Backlog',
+                                icon: Icon(Icons.inventory_2_outlined, size: 16),
+                              ),
+                              M3ESegment(
+                                value: LegoSetStatus.currentlyBuilding,
+                                label: 'Building',
+                                icon: Icon(Icons.handyman_rounded, size: 16),
+                              ),
+                              M3ESegment(
+                                value: LegoSetStatus.built,
+                                label: 'Built',
+                                icon: Icon(Icons.check_circle_rounded, size: 16),
+                              ),
+                            ],
+                            selected: {set.status},
+                            onSelectionChanged: (val) {
+                              if (val.isNotEmpty) {
+                                updateSetStatus(set.id, val.first);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Progress Bar & Counter
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Parts Found: $totalFound / $totalNeeded',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '${(progress * 100).toInt()}%',
+                                style: TextStyle(
+                                  color: progressBarColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: M3EProgressIndicator.linearWavy(
+                              value: progress,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              );
+              ),
 
-              final headerExtent = headerHeight.value + headerExtentPadding;
-
-              return CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    automaticallyImplyLeading: false,
-                    expandedHeight: headerExtent,
-                    collapsedHeight: headerExtent,
-                    toolbarHeight: headerExtent,
-                    elevation: 0,
-                    floating: true,
-                    snap: true,
-                    flexibleSpace: Align(
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(width: width, child: headerCard),
-                    ),
-                  ),
-                  partsAsync.when(
-                    data: (parts) {
-                      if (parts.isEmpty) {
-                        return const SliverFillRemaining(
-                          child: Center(child: Text('No parts found for this set')),
-                        );
-                      }
-                      return SliverPadding(
-                        padding: const EdgeInsets.all(16),
-                        sliver: SliverGrid(
-                          delegate: SliverChildBuilderDelegate((context, index) {
-                            final part = parts[index];
-                            return PartCard(key: ValueKey(part.id), part: part);
-                          }, childCount: parts.length),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            childAspectRatio: 16 / 3,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+              // Filter & Search Toolbar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      M3ETextField(
+                        controller: searchController,
+                        label: 'Search parts by name or ID...',
+                        leading: const Icon(Icons.search_rounded),
+                        trailing: searchQuery.value.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 18),
+                                onPressed: () {
+                                  searchController.clear();
+                                  searchQuery.value = '';
+                                },
+                              )
+                            : null,
+                        onChanged: (v) => searchQuery.value = v,
+                      ),
+                      const SizedBox(height: 12),
+                      M3ESegmentedButton<String>(
+                        segments: [
+                          M3ESegment(
+                            value: 'all',
+                            label: 'All (${allParts.length})',
                           ),
-                        ),
-                      );
-                    },
-                    loading: () => const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (error, stack) => SliverFillRemaining(
-                      child: Center(child: Text('Error loading parts: $error')),
+                          M3ESegment(
+                            value: 'missing',
+                            label: 'Missing ($missingCount)',
+                          ),
+                          M3ESegment(
+                            value: 'found',
+                            label: 'Found ($foundCount)',
+                          ),
+                          M3ESegment(
+                            value: 'spares',
+                            label: 'Spares ($sparesCount)',
+                          ),
+                        ],
+                        selected: {selectedFilter.value},
+                        onSelectionChanged: (val) {
+                          if (val.isNotEmpty) selectedFilter.value = val.first;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Parts Grid
+              if (filteredParts.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 40,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No parts found matching filter',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              );
-            },
+                )
+              else
+                SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.crossAxisExtent;
+                    final crossAxisCount = width < 600
+                        ? 1
+                        : width < 1050
+                            ? 2
+                            : width < 1500
+                                ? 3
+                                : 4;
+
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final part = filteredParts[index];
+                            return PartCard(key: ValueKey(part.id), part: part);
+                          },
+                          childCount: filteredParts.length,
+                        ),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisExtent: 80,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
+            ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error loading set: $error')),
+        loading: () => const Center(
+          child: SizedBox.square(
+            dimension: 36,
+            child: M3EProgressIndicator.circular(),
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text('Error loading set: $error', textAlign: TextAlign.center),
+          ),
+        ),
       ),
     );
   }
-}
 
-class MeasureSize extends SingleChildRenderObjectWidget {
-  const MeasureSize({super.key, required this.onChange, super.child});
-
-  final ValueChanged<Size> onChange;
-
-  @override
-  RenderObject createRenderObject(BuildContext context) => _MeasureSizeRenderObject(onChange);
-
-  @override
-  void updateRenderObject(BuildContext context, covariant _MeasureSizeRenderObject renderObject) {
-    renderObject.onChange = onChange;
-  }
-}
-
-class _MeasureSizeRenderObject extends RenderProxyBox {
-  _MeasureSizeRenderObject(this.onChange);
-
-  ValueChanged<Size> onChange;
-  Size? _oldSize;
-
-  @override
-  void performLayout() {
-    super.performLayout();
-    final newSize = child?.size ?? Size.zero;
-    if (_oldSize == newSize) return;
-    _oldSize = newSize;
-    WidgetsBinding.instance.addPostFrameCallback((_) => onChange(newSize));
+  Future<void> _openInstructions(BuildContext context, WidgetRef ref, LegoSet set) async {
+    final key = ref.read(bricksetApiKeyProvider).value;
+    if (key == null || key.isEmpty) {
+      showSnack(context, 'Please set Brickset API Key in Settings');
+      return;
+    }
+    try {
+      final url = await bricksetApi.getInstructions2(key, set.setNum);
+      await launchUrl(Uri.parse(url));
+    } catch (e) {
+      if (context.mounted) {
+        showSnack(context, 'Error loading instructions: $e');
+      }
+    }
   }
 }

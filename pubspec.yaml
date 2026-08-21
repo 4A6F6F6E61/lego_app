@@ -17,7 +17,10 @@ dependencies:
   go_router: ^17.0.1
   hooks_riverpod: ^3.0.3
   http: ^1.6.0
+  material_3_expressive: ^1.0.7
+  material_new_shapes: ^1.0.0
   material_ui: ^0.0.1
+  motor: ^1.1.0
   package_info_plus: ^9.0.0
   riverpod_annotation: ^3.0.3
   shared_preferences: ^2.5.4

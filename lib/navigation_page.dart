@@ -1,88 +1,147 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_3_expressive/components/navigation_bar/models/m3e_navigation_bar_destination.dart';
+import 'package:material_3_expressive/components/navigation_rail/models/m3e_navigation_rail_destination.dart';
+import 'package:material_3_expressive/components/navigation_rail/models/m3e_navigation_rail_section.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:yaru/yaru.dart';
 
-class NavigationPage extends StatefulWidget {
+class NavigationPage extends ConsumerStatefulWidget {
   const NavigationPage({super.key, required this.navShell});
 
   final StatefulNavigationShell navShell;
 
   @override
-  State<NavigationPage> createState() => _NavigationPageState();
+  ConsumerState<NavigationPage> createState() => _NavigationPageState();
 }
 
-class Tab {
+class _NavDestinationItem {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
 
-  Tab({required this.icon, required this.selectedIcon, required this.label});
+  const _NavDestinationItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
 }
 
-class _NavigationPageState extends State<NavigationPage> {
-  final _tabs = <Tab>[
-    Tab(icon: Icons.dashboard, selectedIcon: Icons.dashboard, label: 'Dashboard'),
-    Tab(icon: YaruIcons.home, selectedIcon: YaruIcons.home_filled, label: 'Sets'),
-    Tab(icon: YaruIcons.settings, selectedIcon: YaruIcons.settings_filled, label: 'Settings'),
+class _NavigationPageState extends ConsumerState<NavigationPage> {
+  static const _destinations = <_NavDestinationItem>[
+    _NavDestinationItem(
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard_rounded,
+      label: 'Dashboard',
+    ),
+    _NavDestinationItem(
+      icon: Icons.view_in_ar_outlined,
+      selectedIcon: Icons.view_in_ar_rounded,
+      label: 'Sets',
+    ),
+    _NavDestinationItem(
+      icon: Icons.tune_outlined,
+      selectedIcon: Icons.tune_rounded,
+      label: 'Settings',
+    ),
   ];
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final currentIndex = widget.navShell.currentIndex;
+
+    final windowTitleBar = !kIsWeb && !Platform.isAndroid && !Platform.isIOS
+        ? YaruWindowTitleBar(
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.extension_rounded, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'LEGO',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Tracker',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          )
+        : null;
+
     return Scaffold(
-      appBar: !kIsWeb && !Platform.isAndroid && !Platform.isIOS
-          ? YaruWindowTitleBar(title: const Text('Lego App'))
-          : null,
+      appBar: windowTitleBar,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 800) {
+          final isWide = constraints.maxWidth > 800;
+
+          if (isWide) {
             return Row(
               children: [
-                NavigationRail(
-                  destinations: [
-                    for (final tab in _tabs)
-                      NavigationRailDestination(
-                        icon: Icon(tab.icon),
-                        selectedIcon: Icon(
-                          tab.selectedIcon,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        label: Text(tab.label),
-                      ),
-                  ],
-                  selectedIndex: widget.navShell.currentIndex,
+                M3ENavigationRail(
+                  selectedIndex: currentIndex,
                   onDestinationSelected: (index) => widget.navShell.goBranch(index),
-                  minExtendedWidth: 180,
-                  extended: true,
-                ),
-                const VerticalDivider(width: 0.0),
-                Expanded(child: widget.navShell),
-              ],
-            );
-          } else {
-            return Column(
-              children: [
-                Expanded(child: widget.navShell),
-                const Divider(height: 0.0),
-                BottomNavigationBar(
-                  items: [
-                    for (final tab in _tabs)
-                      BottomNavigationBarItem(
-                        icon: Icon(tab.icon),
-                        activeIcon: Icon(
-                          tab.selectedIcon,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        label: tab.label,
-                      ),
+                  sections: [
+                    M3ENavigationRailSection(
+                      destinations: [
+                        for (final item in _destinations)
+                          M3ENavigationRailDestination(
+                            icon: Icon(item.icon),
+                            selectedIcon: Icon(item.selectedIcon),
+                            label: item.label,
+                          ),
+                      ],
+                    ),
                   ],
-                  currentIndex: widget.navShell.currentIndex,
-                  onTap: (index) => widget.navShell.goBranch(index),
                 ),
+                const VerticalDivider(width: 1.0, thickness: 1.0),
+                Expanded(child: widget.navShell),
               ],
             );
           }
+
+          return Column(
+            children: [
+              Expanded(child: widget.navShell),
+              M3ENavigationBar(
+                selectedIndex: currentIndex,
+                onDestinationSelected: (index) => widget.navShell.goBranch(index),
+                destinations: [
+                  for (final item in _destinations)
+                    M3ENavigationBarDestination(
+                      icon: Icon(item.icon),
+                      selectedIcon: Icon(item.selectedIcon),
+                      label: item.label,
+                    ),
+                ],
+              ),
+            ],
+          );
         },
       ),
     );

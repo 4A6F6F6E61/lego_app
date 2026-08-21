@@ -13,7 +13,9 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showSnack(
   return ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
-      action: SnackBarAction(label: 'Ok', onPressed: () {}),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      action: SnackBarAction(label: 'OK', onPressed: () {}),
     ),
   );
 }
