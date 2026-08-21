@@ -1,12 +1,11 @@
-import 'dart:async';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:lego_app/db/db.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/tabs/sets/details/part_detail_dialog.dart';
 import 'package:lego_app/util.dart';
+import 'package:yaru/yaru.dart';
 
 class PartCard extends HookWidget {
   const PartCard({super.key, required this.part});
@@ -27,9 +26,15 @@ class PartCard extends HookWidget {
     final startedColor = Colors.amber;
     final notStartedColor = Theme.of(context).colorScheme.surface;
 
-    final inputController = useTextEditingController(
-      text: part.quantityFound.toString(),
-    );
+    final inputController = useTextEditingController(text: part.quantityFound.toString());
+    final focusNode = useFocusNode();
+
+    Future<void> updateQuantityFound(int quantity) {
+      if (quantity < 0) {
+        return Future.value();
+      }
+      return updatePartQuantityFound(part.id, quantity);
+    }
 
     useEffect(() {
       inputController.text = part.quantityFound.toString();
@@ -46,24 +51,23 @@ class PartCard extends HookWidget {
           }
           final quantity = int.tryParse(raw);
           if (quantity != null) {
-            updateQuantityFound(quantity, commitImmediately: true);
+            updateQuantityFound(quantity);
           } else {
             inputController.text = part.quantityFound.toString();
           }
         }
       }
-      await supabase
-          .from('set_parts')
-          .update({'quantity_found': quantity})
-          .eq('id', part.id);
-    }
+
+      focusNode.addListener(handleFocusChange);
+      return () => focusNode.removeListener(handleFocusChange);
+    });
 
     Future<void> increaseQuantityFound() async {
       if (part.isFinished) {
         return;
       }
       inputController.text = (part.quantityFound + 1).toString();
-      await updateQuantityFound(part.quantityFound + 1, commitImmediately: true);
+      await updateQuantityFound(part.quantityFound + 1);
     }
 
     Future<void> decreaseQuantityFound() async {
@@ -71,7 +75,7 @@ class PartCard extends HookWidget {
         return;
       }
       inputController.text = (part.quantityFound - 1).toString();
-      await updateQuantityFound(part.quantityFound - 1, commitImmediately: true);
+      await updateQuantityFound(part.quantityFound - 1);
     }
 
     const borderRadius = BorderRadius.all(Radius.circular(8));
@@ -103,14 +107,8 @@ class PartCard extends HookWidget {
           await showPartDetails(context);
         },
         child: YaruTile(
-          title: Text(
-            part.name ?? 'Unknown Part',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            'Found: ${part.quantityFound} / ${part.quantityNeeded}',
-          ),
+          title: Text(part.name ?? 'Unknown Part', maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text('Found: ${part.quantityFound} / ${part.quantityNeeded}'),
           leading: part.imgUrl != null
               ? CachedNetworkImage(
                   imageUrl: proxiedImageUrl(part.imgUrl!),
@@ -155,7 +153,7 @@ class PartCard extends HookWidget {
                   onFieldSubmitted: (value) async {
                     final quantity = int.tryParse(value.trim());
                     if (quantity != null) {
-                      await updateQuantityFound(quantity, commitImmediately: true);
+                      await updateQuantityFound(quantity);
                     }
                   },
                 ),
