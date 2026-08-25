@@ -67,6 +67,12 @@ void main() {
       expect(calculateProgress(parts), 1.0);
       expect(parts.first.isFinished, isTrue);
     });
+
+    test('getProgressColor returns red for 0, amber for 0.5, emerald for 1.0', () {
+      expect(getProgressColor(0.0), const Color(0xFFEF4444));
+      expect(getProgressColor(0.5), const Color(0xFFF59E0B));
+      expect(getProgressColor(1.0), const Color(0xFF10B981));
+    });
   });
 
   group('LegoSet and SetPart Models', () {

@@ -1,7 +1,7 @@
 name: lego_app
 description: "A cross-platform LEGO set rebuilding application."
 publish_to: 'none'
-version: 0.1.6
+version: 0.1.7
 
 environment:
   sdk: ^3.10.3
@@ -26,7 +26,6 @@ dependencies:
   shared_preferences: ^2.5.4
   supabase_flutter: ^2.12.0
   url_launcher: ^6.3.2
-  yaru: ^9.0.0
 
 dev_dependencies:
   flutter_test:
