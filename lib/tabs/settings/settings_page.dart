@@ -104,6 +104,8 @@ class SettingsPage extends HookConsumerWidget {
               if (currentUser != null) ...[
                 M3ECard(
                   variant: M3ECardVariant.filled,
+                  color: theme.colorScheme.surfaceContainer,
+                  border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
@@ -157,8 +159,10 @@ class SettingsPage extends HookConsumerWidget {
               // Rebrickable Integration Card
               M3ECard(
                 variant: M3ECardVariant.filled,
+                color: theme.colorScheme.surfaceContainer,
+                border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(14.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -218,30 +222,33 @@ class SettingsPage extends HookConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      M3ETextField(
+                      TextFormField(
                         controller: rbApiKeyTC,
-                        label: 'Rebrickable API Key',
-                        obscureText: rbObscure.value,
-                        leading: const Icon(Icons.key_rounded),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                rbObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                size: 18,
+                        decoration: InputDecoration(
+                          labelText: 'Rebrickable API Key',
+                          prefixIcon: const Icon(Icons.key_rounded),
+                          filled: true,
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  rbObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  size: 18,
+                                ),
+                                onPressed: () => rbObscure.value = !rbObscure.value,
                               ),
-                              onPressed: () => rbObscure.value = !rbObscure.value,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
-                              onPressed: () async {
-                                await ref.read(rebrickableApiKeyProvider.notifier).set(rbApiKeyTC.text.trim());
-                                if (context.mounted) showSnack(context, 'Rebrickable API Key saved');
-                              },
-                            ),
-                          ],
+                              IconButton(
+                                icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
+                                onPressed: () async {
+                                  await ref.read(rebrickableApiKeyProvider.notifier).set(rbApiKeyTC.text.trim());
+                                  if (context.mounted) showSnack(context, 'Rebrickable API Key saved');
+                                },
+                              ),
+                            ],
+                          ),
                         ),
+                        obscureText: rbObscure.value,
                       ),
                       const SizedBox(height: 16),
                       userTokenAsync.when(
@@ -313,8 +320,10 @@ class SettingsPage extends HookConsumerWidget {
               // Brickset Integration Card
               M3ECard(
                 variant: M3ECardVariant.filled,
+                color: theme.colorScheme.surfaceContainer,
+                border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(14.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -351,30 +360,33 @@ class SettingsPage extends HookConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      M3ETextField(
+                      TextFormField(
                         controller: bsApiKeyTC,
-                        label: 'Brickset API Key',
-                        obscureText: bsObscure.value,
-                        leading: const Icon(Icons.vpn_key_outlined),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                bsObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                size: 18,
+                        decoration: InputDecoration(
+                          labelText: 'Brickset API Key',
+                          prefixIcon: const Icon(Icons.vpn_key_outlined),
+                          filled: true,
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  bsObscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  size: 18,
+                                ),
+                                onPressed: () => bsObscure.value = !bsObscure.value,
                               ),
-                              onPressed: () => bsObscure.value = !bsObscure.value,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
-                              onPressed: () async {
-                                await ref.read(bricksetApiKeyProvider.notifier).set(bsApiKeyTC.text.trim());
-                                if (context.mounted) showSnack(context, 'Brickset API Key saved');
-                              },
-                            ),
-                          ],
+                              IconButton(
+                                icon: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 20),
+                                onPressed: () async {
+                                  await ref.read(bricksetApiKeyProvider.notifier).set(bsApiKeyTC.text.trim());
+                                  if (context.mounted) showSnack(context, 'Brickset API Key saved');
+                                },
+                              ),
+                            ],
+                          ),
                         ),
+                        obscureText: bsObscure.value,
                       ),
                     ],
                   ),
@@ -384,9 +396,11 @@ class SettingsPage extends HookConsumerWidget {
 
               // About & App Information Card
               M3ECard(
-                variant: M3ECardVariant.outlined,
+                variant: M3ECardVariant.filled,
+                color: theme.colorScheme.surfaceContainer,
+                border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.all(14.0),
                   child: Column(
                     children: [
                       Row(
@@ -408,10 +422,12 @@ class SettingsPage extends HookConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            'LEGO Set & Parts Rebuilder Tracker',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Text(
+                              'LEGO Set & Parts Rebuilder Tracker',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],

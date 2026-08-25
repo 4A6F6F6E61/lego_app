@@ -19,8 +19,8 @@ class ConfirmActionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return M3EDialog(
-      title: title,
+    return AlertDialog(
+      title: Text(title),
       content: Text(
         content,
         style: theme.textTheme.bodyMedium?.copyWith(

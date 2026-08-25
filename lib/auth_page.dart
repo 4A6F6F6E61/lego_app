@@ -70,6 +70,8 @@ class _AuthPageContent extends HookWidget {
             constraints: const BoxConstraints(maxWidth: 440),
             child: M3ECard(
               variant: M3ECardVariant.filled,
+              color: theme.colorScheme.surfaceContainer,
+              border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
@@ -132,27 +134,33 @@ class _AuthPageContent extends HookWidget {
                     const SizedBox(height: 24),
 
                     // Form Fields
-                    M3ETextField(
+                    TextFormField(
                       controller: emailController,
-                      label: 'Email Address',
-                      leading: const Icon(Icons.mail_outline_rounded),
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: Icon(Icons.mail_outline_rounded),
+                        filled: true,
+                      ),
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
-                    M3ETextField(
+                    TextFormField(
                       controller: passwordController,
-                      label: 'Password',
-                      obscureText: obscurePassword.value,
-                      leading: const Icon(Icons.lock_outline_rounded),
-                      trailing: IconButton(
-                        icon: Icon(
-                          obscurePassword.value
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          size: 18,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline_rounded),
+                        filled: true,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePassword.value
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 18,
+                          ),
+                          onPressed: () => obscurePassword.value = !obscurePassword.value,
                         ),
-                        onPressed: () => obscurePassword.value = !obscurePassword.value,
                       ),
+                      obscureText: obscurePassword.value,
                     ),
                     const SizedBox(height: 28),
 

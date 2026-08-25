@@ -85,19 +85,22 @@ class SetsPage extends HookConsumerWidget {
                   child: Column(
                     children: [
                       // Search bar
-                      M3ETextField(
+                      TextFormField(
                         controller: searchController,
-                        label: 'Search sets by name or #number...',
-                        leading: const Icon(Icons.search_rounded),
-                        trailing: searchQuery.value.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 18),
-                                onPressed: () {
-                                  searchController.clear();
-                                  searchQuery.value = '';
-                                },
-                              )
-                            : null,
+                        decoration: InputDecoration(
+                          labelText: 'Search sets by name or #number...',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          suffixIcon: searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    searchQuery.value = '';
+                                  },
+                                )
+                              : null,
+                        ),
                         onChanged: (value) => searchQuery.value = value,
                       ),
                       const SizedBox(height: 12),

@@ -140,3 +140,15 @@ double calculateProgress(List<SetPart> parts) {
   });
   return totalNeeded == 0 ? 0.0 : totalFound / totalNeeded;
 }
+
+Color getProgressColor(double progress) {
+  final p = progress.clamp(0.0, 1.0);
+  if (p <= 0.0) return const Color(0xFFEF4444); // Red
+  if (p >= 1.0) return const Color(0xFF10B981); // Emerald Green
+  if (p < 0.5) {
+    final t = p / 0.5;
+    return Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), t)!; // Red -> Amber
+  }
+  final t = (p - 0.5) / 0.5;
+  return Color.lerp(const Color(0xFFF59E0B), const Color(0xFF10B981), t)!; // Amber -> Emerald
+}

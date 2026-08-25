@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lego_app/components/set_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
+import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -15,17 +16,7 @@ class DashboardPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            tooltip: 'All Sets',
-            icon: const Icon(Icons.grid_view_rounded),
-            onPressed: () => context.go('/sets'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Dashboard')),
       body: setsAsync.when(
         data: (sets) {
           final building = sets.where((s) => s.status == LegoSetStatus.currentlyBuilding).toList();
@@ -42,6 +33,8 @@ class DashboardPage extends ConsumerWidget {
               // Welcome Banner / Progress Card
               M3ECard(
                 variant: M3ECardVariant.filled,
+                color: theme.colorScheme.surfaceContainer,
+                border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -106,6 +99,10 @@ class DashboardPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(6),
                         child: M3EProgressIndicator.linearWavy(
                           value: totalSets > 0 ? completionRate : null,
+                          color: totalSets > 0 ? getProgressColor(completionRate) : null,
+                          trackColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                          strokeWidth: 4,
+                          trackStrokeWidth: 4,
                         ),
                       ),
                     ],
@@ -167,100 +164,121 @@ class DashboardPage extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: M3ECard(
-                      variant: M3ECardVariant.outlined,
-                      onPressed: () => context.go('/settings'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.sync_rounded,
-                                color: Color(0xFF3B82F6),
-                                size: 20,
-                              ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 500;
+
+                  final syncCard = M3ECard(
+                    variant: M3ECardVariant.filled,
+                    color: theme.colorScheme.surfaceContainer,
+                    border: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
+                    onPressed: () => context.go('/settings'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Sync Collection',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Rebrickable integration',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.outline,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: const Icon(
+                              Icons.sync_rounded,
+                              color: Color(0xFF3B82F6),
+                              size: 20,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sync Collection',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Rebrickable integration',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: M3ECard(
-                      variant: M3ECardVariant.outlined,
-                      onPressed: () => context.go('/sets'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.explore_rounded,
-                                color: Color(0xFF10B981),
-                                size: 20,
-                              ),
+                  );
+
+                  final browseCard = M3ECard(
+                    variant: M3ECardVariant.filled,
+                    color: theme.colorScheme.surfaceContainer,
+                    border: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
+                    onPressed: () => context.go('/sets'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Browse Catalog',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'View all sets & parts',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.outline,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: const Icon(
+                              Icons.explore_rounded,
+                              color: Color(0xFF10B981),
+                              size: 20,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Browse Catalog',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'View all sets & parts',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  );
+
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [syncCard, const SizedBox(height: 12), browseCard],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: syncCard),
+                      const SizedBox(width: 12),
+                      Expanded(child: browseCard),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 28),
 
@@ -309,16 +327,17 @@ class DashboardPage extends ConsumerWidget {
                     itemCount: building.length,
                     separatorBuilder: (context, index) => const SizedBox(width: 14),
                     itemBuilder: (context, index) {
-                      return SizedBox(
-                        width: 270,
-                        child: SetCard(set: building[index]),
-                      );
+                      return SizedBox(width: 270, child: SetCard(set: building[index]));
                     },
                   ),
                 ),
               ] else ...[
                 M3ECard(
-                  variant: M3ECardVariant.outlined,
+                  variant: M3ECardVariant.filled,
+                  color: theme.colorScheme.surfaceContainer,
+                  border: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
@@ -339,9 +358,7 @@ class DashboardPage extends ConsumerWidget {
                         const SizedBox(height: 14),
                         Text(
                           'No Active Builds',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -366,10 +383,7 @@ class DashboardPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(
-          child: SizedBox.square(
-            dimension: 36,
-            child: M3EProgressIndicator.circular(),
-          ),
+          child: SizedBox.square(dimension: 36, child: M3EProgressIndicator.circular()),
         ),
         error: (error, stack) => Center(
           child: Padding(
@@ -408,6 +422,8 @@ class _StatCard extends StatelessWidget {
 
     return M3ECard(
       variant: M3ECardVariant.filled,
+      color: theme.colorScheme.surfaceContainer,
+      border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
       child: Padding(
         padding: const EdgeInsets.all(14.0),
         child: Column(
@@ -427,9 +443,7 @@ class _StatCard extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ],
             ),

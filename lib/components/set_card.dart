@@ -17,21 +17,13 @@ class SetCard extends ConsumerWidget {
     final partsAsync = ref.watch(setPartsStreamProvider(set.id));
 
     final (statusLabel, statusColor, statusIcon) = switch (set.status) {
-      LegoSetStatus.built => (
-        'Built',
-        const Color(0xFF10B981),
-        Icons.check_circle_rounded,
-      ),
+      LegoSetStatus.built => ('Built', const Color(0xFF10B981), Icons.check_circle_rounded),
       LegoSetStatus.currentlyBuilding => (
         'Building',
         const Color(0xFFF59E0B),
         Icons.handyman_rounded,
       ),
-      LegoSetStatus.backlog => (
-        'Backlog',
-        const Color(0xFF3B82F6),
-        Icons.inventory_2_outlined,
-      ),
+      LegoSetStatus.backlog => ('Backlog', const Color(0xFF3B82F6), Icons.inventory_2_outlined),
     };
 
     final progress = partsAsync.when(
@@ -43,171 +35,148 @@ class SetCard extends ConsumerWidget {
     return M3ECard(
       variant: M3ECardVariant.filled,
       padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(16),
+      border: BorderSide(color: statusColor.withValues(alpha: 0.8), width: 1.5),
+      clipBehavior: Clip.antiAlias,
       onPressed: () => context.go('/sets/details/${set.id}'),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                    child: set.imgUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: proxiedImageUrl(set.imgUrl!),
-                            fit: BoxFit.contain,
-                            placeholder: (context, url) => const Center(
-                              child: SizedBox.square(
-                                dimension: 24,
-                                child: M3EProgressIndicator.circular(),
-                              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                  child: set.imgUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: proxiedImageUrl(set.imgUrl!),
+                          fit: BoxFit.contain,
+                          placeholder: (context, url) => const Center(
+                            child: SizedBox.square(
+                              dimension: 24,
+                              child: M3EProgressIndicator.circular(),
                             ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
-                            ),
-                          )
-                        : const Center(
+                          ),
+                          errorWidget: (context, url, error) => const Center(
                             child: Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
                           ),
-                  ),
-                  // Top overlay gradient for badges
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 48,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.transparent,
-                          ],
+                        )
+                      : const Center(
+                          child: Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
                         ),
+                ),
+                // Top overlay gradient for badges
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 44,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.black.withValues(alpha: 0.3), Colors.transparent],
                       ),
                     ),
                   ),
-                  // Set number badge
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '#${set.setNum}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                ),
+                // Set number badge
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '#${set.setNum}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
-                  // Status badge
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: statusColor.withValues(alpha: 0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(statusIcon, size: 12, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text(
-                            statusLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Bottom Info panel
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainer,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    set.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          ),
+          // Bottom Info panel
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainer),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  set.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      if (set.year != null) ...[
-                        Icon(Icons.calendar_today_rounded, size: 12, color: theme.colorScheme.outline),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${set.year}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    if (set.year != null) ...[
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 12,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${set.year}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const Spacer(),
-                      ],
-                      if (partsAsync.value != null)
-                        Text(
-                          '${(progress * 100).toInt()}% found',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                      ),
                     ],
-                  ),
-                  if (set.status == LegoSetStatus.currentlyBuilding && partsAsync.value != null) ...[
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: M3EProgressIndicator.linearWavy(
-                        value: progress,
+                    const Spacer(),
+                    if (partsAsync.value != null) ...[
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                       ),
-                    ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${(progress * 100).toInt()}% found',
+                        style: TextStyle(
+                          color: getProgressColor(progress),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
                   ],
+                ),
+                if (set.status == LegoSetStatus.currentlyBuilding && partsAsync.value != null) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: M3EProgressIndicator.linearWavy(
+                      value: progress,
+                      color: getProgressColor(progress),
+                      trackColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                      strokeWidth: 3.5,
+                      trackStrokeWidth: 3.5,
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

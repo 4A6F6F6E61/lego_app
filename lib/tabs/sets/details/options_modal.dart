@@ -90,6 +90,8 @@ class OptionsModal extends HookConsumerWidget {
           else ...[
             M3ECard(
               variant: M3ECardVariant.filled,
+              color: theme.colorScheme.surfaceContainer,
+              border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
               onPressed: setCompleted,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),

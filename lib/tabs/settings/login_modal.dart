@@ -35,8 +35,8 @@ class LoginModal extends HookWidget {
       }
     }
 
-    return M3EDialog(
-      title: 'Rebrickable Login',
+    return AlertDialog(
+      title: const Text('Rebrickable Login'),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -47,17 +47,23 @@ class LoginModal extends HookWidget {
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 16),
-            M3ETextField(
+            TextFormField(
               controller: username,
-              label: 'Username',
-              leading: const Icon(Icons.person_outline_rounded),
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+                filled: true,
+              ),
             ),
             const SizedBox(height: 14),
-            M3ETextField(
+            TextFormField(
               controller: password,
-              label: 'Password',
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+                filled: true,
+              ),
               obscureText: true,
-              leading: const Icon(Icons.lock_outline_rounded),
             ),
           ],
         ),

@@ -34,17 +34,6 @@ class DetailsPage extends HookConsumerWidget {
       return calculateProgress(parts);
     }, [partsAsync.value]);
 
-    final progressBarColor = useMemoized(() {
-      if (progress <= 0.0) return const Color(0xFFEF4444);
-      if (progress >= 1.0) return const Color(0xFF10B981);
-      if (progress < 0.5) {
-        final t = progress / 0.5;
-        return Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), t)!;
-      }
-      final t = (progress - 0.5) / 0.5;
-      return Color.lerp(const Color(0xFFF59E0B), const Color(0xFF10B981), t)!;
-    }, [progress]);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Details'),
@@ -105,6 +94,8 @@ class DetailsPage extends HookConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: M3ECard(
                     variant: M3ECardVariant.filled,
+                    color: theme.colorScheme.surfaceContainer,
+                    border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
@@ -115,14 +106,18 @@ class DetailsPage extends HookConsumerWidget {
                             builder: (context, constraints) {
                               final isCompact = constraints.maxWidth < 600;
                               final imageWidget = Container(
-                                width: isCompact ? 100 : 130,
-                                height: isCompact ? 100 : 130,
+                                width: isCompact ? 95 : 120,
+                                height: isCompact ? 95 : 120,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.18),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 padding: const EdgeInsets.all(8),
                                 child: set.imgUrl != null
@@ -311,7 +306,7 @@ class DetailsPage extends HookConsumerWidget {
                               Text(
                                 '${(progress * 100).toInt()}%',
                                 style: TextStyle(
-                                  color: progressBarColor,
+                                  color: getProgressColor(progress),
                                   fontWeight: FontWeight.w900,
                                   fontSize: 16,
                                 ),
@@ -323,6 +318,10 @@ class DetailsPage extends HookConsumerWidget {
                             borderRadius: BorderRadius.circular(6),
                             child: M3EProgressIndicator.linearWavy(
                               value: progress,
+                              color: getProgressColor(progress),
+                              trackColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                              strokeWidth: 4,
+                              trackStrokeWidth: 4,
                             ),
                           ),
                         ],
@@ -338,19 +337,22 @@ class DetailsPage extends HookConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
                     children: [
-                      M3ETextField(
+                      TextFormField(
                         controller: searchController,
-                        label: 'Search parts by name or ID...',
-                        leading: const Icon(Icons.search_rounded),
-                        trailing: searchQuery.value.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 18),
-                                onPressed: () {
-                                  searchController.clear();
-                                  searchQuery.value = '';
-                                },
-                              )
-                            : null,
+                        decoration: InputDecoration(
+                          labelText: 'Search parts by name or ID...',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          suffixIcon: searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    searchQuery.value = '';
+                                  },
+                                )
+                              : null,
+                        ),
                         onChanged: (v) => searchQuery.value = v,
                       ),
                       const SizedBox(height: 12),

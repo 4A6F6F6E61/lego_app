@@ -8,19 +8,14 @@ import 'package:lego_app/router.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:yaru/yaru.dart';
 
 Future<void> main() async {
-  if (!Platform.isAndroid && !Platform.isIOS) {
-    await YaruWindowTitleBar.ensureInitialized();
-  }
-
   WidgetsFlutterBinding.ensureInitialized();
   SemanticsBinding.instance.ensureSemantics();
 
   await Supabase.initialize(
     url: 'https://ugeaobcrrhwqmvlpwmpw.supabase.co',
-    anonKey: 'sb_publishable_XYC10qjxJD7ryTFMVUBLUQ_rr6_gPkd',
+    publishableKey: 'sb_publishable_XYC10qjxJD7ryTFMVUBLUQ_rr6_gPkd',
   );
 
   runApp(const ProviderScope(child: App()));
@@ -42,24 +37,60 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final darkM3ETheme = M3EThemeData.dark(seedColor: seedColor);
-    final lightM3ETheme = M3EThemeData.light(seedColor: seedColor);
+    final darkM3EThemeBase = M3EThemeData.dark(seedColor: seedColor);
+    final darkM3ETheme = darkM3EThemeBase.copyWith(
+      navigationRailTheme: darkM3EThemeBase.navigationRailTheme.copyWith(
+        containerColor: Colors.transparent,
+      ),
+    );
+
+    final lightM3EThemeBase = M3EThemeData.light(seedColor: seedColor);
+    final lightM3ETheme = lightM3EThemeBase.copyWith(
+      navigationRailTheme: lightM3EThemeBase.navigationRailTheme.copyWith(
+        containerColor: Colors.transparent,
+      ),
+    );
+
+    final baseDarkColor = ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark);
+    final darkColorScheme = baseDarkColor.copyWith(
+      surface: const Color(0xFF16181D),
+      surfaceContainerHighest: const Color(0xFF21252D),
+      surfaceContainerHigh: const Color(0xFF1D2027),
+      surfaceContainer: const Color(0xFF1A1C22),
+      surfaceContainerLow: const Color(0xFF17191E),
+      surfaceContainerLowest: const Color(0xFF13151A),
+    );
 
     final darkMaterialTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorSchemeSeed: seedColor,
+      colorScheme: darkColorScheme,
       scaffoldBackgroundColor: const Color(0xFF13151A),
       cardTheme: const CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
       appBarTheme: const AppBarThemeData(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF1A1C22),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: seedColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
 
@@ -70,14 +101,29 @@ class App extends StatelessWidget {
       scaffoldBackgroundColor: const Color(0xFFF7F8FC),
       cardTheme: const CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
       appBarTheme: const AppBarThemeData(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: seedColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
 
@@ -116,10 +162,7 @@ class App extends StatelessWidget {
           );
         }
 
-        return M3ETheme(
-          data: currentM3ETheme,
-          child: responsiveChild,
-        );
+        return M3ETheme(data: currentM3ETheme, child: responsiveChild);
       },
     );
   }
