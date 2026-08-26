@@ -1,7 +1,7 @@
 name: lego_app
 description: "A cross-platform LEGO set rebuilding application."
 publish_to: 'none'
-version: 0.1.7
+version: 0.1.8
 
 environment:
   sdk: ^3.10.3

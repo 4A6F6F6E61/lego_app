@@ -31,18 +31,9 @@ class PartCard extends HookConsumerWidget {
     final isSpare = part.isSpare;
 
     final (statusColor, statusBgColor) = switch ((isFinished, isStarted, isSpare)) {
-      (true, _, _) => (
-        const Color(0xFF10B981),
-        const Color(0xFF10B981).withValues(alpha: 0.12),
-      ),
-      (_, true, _) => (
-        const Color(0xFFF59E0B),
-        const Color(0xFFF59E0B).withValues(alpha: 0.12),
-      ),
-      (_, _, true) => (
-        const Color(0xFFEF4444),
-        const Color(0xFFEF4444).withValues(alpha: 0.10),
-      ),
+      (true, _, _) => (const Color(0xFF10B981), const Color(0xFF10B981).withValues(alpha: 0.12)),
+      (_, true, _) => (const Color(0xFFF59E0B), const Color(0xFFF59E0B).withValues(alpha: 0.12)),
+      (_, _, true) => (const Color(0xFFEF4444), const Color(0xFFEF4444).withValues(alpha: 0.10)),
       _ => (
         theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
         theme.colorScheme.surfaceContainer,
@@ -144,11 +135,8 @@ class PartCard extends HookConsumerWidget {
                             child: M3EProgressIndicator.circular(),
                           ),
                         ),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.extension_outlined,
-                          size: 22,
-                          color: Colors.grey,
-                        ),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.extension_outlined, size: 22, color: Colors.grey),
                       )
                     : const Icon(Icons.extension_outlined, size: 22, color: Colors.grey),
               ),
@@ -164,10 +152,7 @@ class PartCard extends HookConsumerWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 3,
-                        ),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 3),
                       ],
                     ),
                   ),
@@ -224,7 +209,8 @@ class PartCard extends HookConsumerWidget {
                           colorName,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.outline,
-                            fontSize: 11,
+
+                            fontSize: 12,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -234,10 +220,9 @@ class PartCard extends HookConsumerWidget {
                     ],
                     Text(
                       '${part.quantityFound}/${part.quantityNeeded}',
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontSize: 11,
                       ),
                     ),
                     if (isFinished) ...[
@@ -274,9 +259,7 @@ class PartCard extends HookConsumerWidget {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
                     ),
                   ),
                   onTap: () {
