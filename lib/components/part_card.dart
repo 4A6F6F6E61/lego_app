@@ -209,7 +209,6 @@ class PartCard extends HookConsumerWidget {
                           colorName,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.outline,
-
                             fontSize: 12,
                           ),
                           maxLines: 1,
