@@ -69,6 +69,10 @@ Future<void> flagPartAsSpare(int partId, bool isSpare) async {
   await supabase.from('set_parts').update({'is_spare': isSpare}).eq('id', partId);
 }
 
+Future<void> flagPartAsLost(int partId, bool isLost) async {
+  await supabase.from('set_parts').update({'is_lost': isLost}).eq('id', partId);
+}
+
 Future<void> updatePartQuantityFound(int partId, int quantityFound) async {
   await supabase.from('set_parts').update({'quantity_found': quantityFound}).eq('id', partId);
 }

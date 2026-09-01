@@ -4,12 +4,12 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
-  bitsdojo_window_windows
   dynamic_color
   url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  cnativeapi
   jni
 )
 

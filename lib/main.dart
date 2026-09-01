@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:nativeapi/nativeapi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,12 +21,12 @@ Future<void> main() async {
   runApp(const ProviderScope(child: App()));
 
   if (!Platform.isAndroid && !Platform.isIOS) {
-    doWhenWindowReady(() {
-      appWindow.minSize = const Size(360, 480);
-      appWindow.size = const Size(1280, 760);
-      appWindow.alignment = Alignment.center;
-      appWindow.show();
-    });
+    final window = WindowManager.instance.getCurrent();
+    window?.minimumSize = const Size(360, 480);
+    window?.setSize(const Size(1280, 760), false);
+    window?.center();
+    window?.titleBarStyle = TitleBarStyle.hidden;
+    window?.show();
   }
 }
 
@@ -162,7 +162,11 @@ class App extends StatelessWidget {
           );
         }
 
-        return M3ETheme(data: currentM3ETheme, child: responsiveChild);
+        return GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: M3ETheme(data: currentM3ETheme, child: responsiveChild),
+        );
       },
     );
   }

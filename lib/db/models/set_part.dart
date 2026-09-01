@@ -10,6 +10,7 @@ class SetPart {
   final int quantityFound;
   // TODO: Is spare is not working right now.
   final bool isSpare;
+  final bool isLost;
 
   bool get isFinished => quantityNeeded <= quantityFound;
 
@@ -24,6 +25,7 @@ class SetPart {
     required this.quantityNeeded,
     required this.quantityFound,
     required this.isSpare,
+    required this.isLost,
   });
 
   factory SetPart.fromJson(Map<String, dynamic> json) {
@@ -37,7 +39,8 @@ class SetPart {
       imgUrl: json['img_url'] as String?,
       quantityNeeded: json['quantity_needed'] as int,
       quantityFound: json['quantity_found'] as int,
-      isSpare: json['is_spare'] as bool,
+      isSpare: json['is_spare'] as bool? ?? false,
+      isLost: json['is_lost'] as bool? ?? false,
     );
   }
 
@@ -57,6 +60,7 @@ class SetPart {
       quantityNeeded: data['quantity'] as int,
       quantityFound: 0,
       isSpare: false,
+      isLost: false,
     );
   }
 
@@ -72,6 +76,7 @@ class SetPart {
       'quantity_needed': quantityNeeded,
       'quantity_found': quantityFound,
       'is_spare': isSpare,
+      'is_lost': isLost,
     };
   }
 }

@@ -87,6 +87,7 @@ class DetailsPage extends HookConsumerWidget {
           final sparesCount = allParts.where((p) => p.isSpare).length;
 
           return CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             slivers: [
               // Hero Header Section
               SliverToBoxAdapter(

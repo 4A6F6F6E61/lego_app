@@ -18,6 +18,7 @@ class PartDetailDialog extends HookConsumerWidget {
     final colorsAsync = ref.watch(colorsProvider);
     final theme = Theme.of(context);
     final isSpareState = useState(part.isSpare);
+    final isLostState = useState(part.isLost);
 
     Color? legoColor;
     String? colorName;
@@ -202,6 +203,23 @@ class PartDetailDialog extends HookConsumerWidget {
                           onChanged: (val) {
                             isSpareState.value = val;
                             flagPartAsSpare(part.id, val);
+                          },
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Unable to find',
+                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        M3ESwitch(
+                          value: isLostState.value,
+                          onChanged: (val) {
+                            isLostState.value = val;
+                            flagPartAsLost(part.id, val);
                           },
                         ),
                       ],

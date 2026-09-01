@@ -24,6 +24,7 @@ void main() {
           quantityNeeded: 10,
           quantityFound: 5,
           isSpare: false,
+          isLost: false,
         ),
         SetPart(
           id: 2,
@@ -34,6 +35,7 @@ void main() {
           quantityNeeded: 10,
           quantityFound: 10,
           isSpare: false,
+          isLost: false,
         ),
         SetPart(
           id: 3,
@@ -43,7 +45,8 @@ void main() {
           colorId: 3,
           quantityNeeded: 2,
           quantityFound: 0,
-          isSpare: true, // Should be ignored in progress calculation
+          isSpare: true,
+          isLost: false, // Should be ignored in progress calculation
         ),
       ];
 
@@ -62,6 +65,7 @@ void main() {
           quantityNeeded: 4,
           quantityFound: 4,
           isSpare: false,
+          isLost: false,
         ),
       ];
       expect(calculateProgress(parts), 1.0);
@@ -159,6 +163,7 @@ void main() {
         quantityNeeded: 10,
         quantityFound: 4,
         isSpare: true,
+          isLost: false,
       );
 
       await tester.pumpWidget(

@@ -15,6 +15,7 @@ class PartCard extends HookConsumerWidget {
   final SetPart part;
 
   Future<void> showPartDetails(BuildContext context) async {
+    FocusScope.of(context).unfocus();
     await showDialog(
       context: context,
       builder: (context) => PartDetailDialog(part: part),
@@ -29,11 +30,13 @@ class PartCard extends HookConsumerWidget {
     final isFinished = part.isFinished;
     final isStarted = part.quantityFound > 0 && !isFinished;
     final isSpare = part.isSpare;
+    final isLost = part.isLost;
 
-    final (statusColor, statusBgColor) = switch ((isFinished, isStarted, isSpare)) {
-      (true, _, _) => (const Color(0xFF10B981), const Color(0xFF10B981).withValues(alpha: 0.12)),
-      (_, true, _) => (const Color(0xFFF59E0B), const Color(0xFFF59E0B).withValues(alpha: 0.12)),
-      (_, _, true) => (const Color(0xFFEF4444), const Color(0xFFEF4444).withValues(alpha: 0.10)),
+    final (statusColor, statusBgColor) = switch ((isFinished, isStarted, isLost, isSpare)) {
+      (true, _, _, _) => (const Color(0xFF10B981), const Color(0xFF10B981).withValues(alpha: 0.12)),
+      (_, true, _, _) => (const Color(0xFFF59E0B), const Color(0xFFF59E0B).withValues(alpha: 0.12)),
+      (_, _, true, _) => (const Color(0xFFEF4444), const Color(0xFFEF4444).withValues(alpha: 0.10)),
+      (_, _, _, true) => (const Color(0xFF8B5CF6), const Color(0xFF8B5CF6).withValues(alpha: 0.10)),
       _ => (
         theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
         theme.colorScheme.surfaceContainer,
