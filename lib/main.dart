@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:nativeapi/nativeapi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:lego_app/router.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,15 +19,15 @@ Future<void> main() async {
     postgrestOptions: const PostgrestClientOptions(schema: 'lego_app'),
   );
 
-  runApp(const ProviderScope(child: App()));
-
-  if (!Platform.isAndroid && !Platform.isIOS) {
-    final window = WindowManager.instance.getCurrent();
-    window?.minimumSize = const Size(360, 480);
-    window?.setSize(const Size(1280, 760), false);
-    window?.center();
-    window?.show();
+  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    await windowManager.setMinimumSize(const Size(360, 480));
+    await windowManager.setSize(const Size(1280, 760));
+    await windowManager.center();
+    await windowManager.show();
   }
+
+  runApp(const ProviderScope(child: App()));
 }
 
 class App extends StatelessWidget {
@@ -51,7 +51,10 @@ class App extends StatelessWidget {
       ),
     );
 
-    final baseDarkColor = ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark);
+    final baseDarkColor = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.dark,
+    );
     final darkColorScheme = baseDarkColor.copyWith(
       surface: const Color(0xFF16181D),
       surfaceContainerHighest: const Color(0xFF21252D),
@@ -68,7 +71,9 @@ class App extends StatelessWidget {
       scaffoldBackgroundColor: const Color(0xFF13151A),
       cardTheme: const CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
       ),
       appBarTheme: const AppBarThemeData(
         backgroundColor: Colors.transparent,
@@ -90,7 +95,10 @@ class App extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: seedColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
     );
 
@@ -101,7 +109,9 @@ class App extends StatelessWidget {
       scaffoldBackgroundColor: const Color(0xFFF7F8FC),
       cardTheme: const CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
       ),
       appBarTheme: const AppBarThemeData(
         backgroundColor: Colors.transparent,
@@ -123,7 +133,10 @@ class App extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: seedColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
     );
 
@@ -144,7 +157,9 @@ class App extends StatelessWidget {
         if (kIsWeb) {
           responsiveChild = MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(
+                bottom: 24.0,
+              ),
               padding: existingMediaQuery.padding.copyWith(bottom: 24.0),
               textScaler: const TextScaler.linear(0.9),
             ),
@@ -156,7 +171,9 @@ class App extends StatelessWidget {
             defaultTargetPlatform == TargetPlatform.fuchsia) {
           responsiveChild = MediaQuery(
             data: existingMediaQuery.copyWith(
-              viewPadding: existingMediaQuery.viewPadding.copyWith(bottom: 24.0),
+              viewPadding: existingMediaQuery.viewPadding.copyWith(
+                bottom: 24.0,
+              ),
             ),
             child: responsiveChild,
           );

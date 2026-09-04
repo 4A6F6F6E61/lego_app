@@ -11,7 +11,7 @@ import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:nativeapi/nativeapi.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetailsPage extends HookConsumerWidget {
   const DetailsPage({super.key, required this.setId});
@@ -25,7 +25,9 @@ class DetailsPage extends HookConsumerWidget {
     final theme = Theme.of(context);
 
     final searchQuery = useState<String>('');
-    final selectedFilter = useState<String>('all'); // all, missing, found, spares
+    final selectedFilter = useState<String>(
+      'all',
+    ); // all, missing, found, spares
     final searchController = useTextEditingController();
 
     final progress = useMemoized(() {
@@ -60,8 +62,14 @@ class DetailsPage extends HookConsumerWidget {
           }
 
           final allParts = partsAsync.value ?? <SetPart>[];
-          final totalNeeded = allParts.fold<int>(0, (sum, p) => p.isSpare ? sum : sum + p.quantityNeeded);
-          final totalFound = allParts.fold<int>(0, (sum, p) => p.isSpare ? sum : sum + p.quantityFound);
+          final totalNeeded = allParts.fold<int>(
+            0,
+            (sum, p) => p.isSpare ? sum : sum + p.quantityNeeded,
+          );
+          final totalFound = allParts.fold<int>(
+            0,
+            (sum, p) => p.isSpare ? sum : sum + p.quantityFound,
+          );
 
           final query = searchQuery.value.trim().toLowerCase();
           final filteredParts = allParts.where((part) {
@@ -82,8 +90,12 @@ class DetailsPage extends HookConsumerWidget {
             return true;
           }).toList();
 
-          final missingCount = allParts.where((p) => !p.isFinished && !p.isSpare).length;
-          final foundCount = allParts.where((p) => p.isFinished && !p.isSpare).length;
+          final missingCount = allParts
+              .where((p) => !p.isFinished && !p.isSpare)
+              .length;
+          final foundCount = allParts
+              .where((p) => p.isFinished && !p.isSpare)
+              .length;
           final sparesCount = allParts.where((p) => p.isSpare).length;
 
           return CustomScrollView(
@@ -96,7 +108,11 @@ class DetailsPage extends HookConsumerWidget {
                   child: M3ECard(
                     variant: M3ECardVariant.filled,
                     color: theme.colorScheme.surfaceContainer,
-                    border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                    border: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
@@ -114,7 +130,9 @@ class DetailsPage extends HookConsumerWidget {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.18),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.18,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -128,16 +146,22 @@ class DetailsPage extends HookConsumerWidget {
                                         placeholder: (context, url) => const Center(
                                           child: SizedBox.square(
                                             dimension: 24,
-                                            child: M3EProgressIndicator.circular(),
+                                            child:
+                                                M3EProgressIndicator.circular(),
                                           ),
                                         ),
-                                        errorWidget: (context, url, error) => const Icon(
-                                          Icons.extension_outlined,
-                                          size: 40,
-                                          color: Colors.grey,
-                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(
+                                              Icons.extension_outlined,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
                                       )
-                                    : const Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
+                                    : const Icon(
+                                        Icons.extension_outlined,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
                               );
 
                               final infoWidget = Column(
@@ -159,10 +183,17 @@ class DetailsPage extends HookConsumerWidget {
                                     runSpacing: 4,
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: theme.colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: theme
+                                              .colorScheme
+                                              .primaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Text(
                                           'Set #${set.setNum}',
@@ -175,29 +206,45 @@ class DetailsPage extends HookConsumerWidget {
                                       ),
                                       if (set.year != null)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: theme.colorScheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: Text(
                                             'Year: ${set.year}',
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                         ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: theme.colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Text(
                                           '${allParts.length} parts',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -220,11 +267,19 @@ class DetailsPage extends HookConsumerWidget {
                                     SizedBox(
                                       width: double.infinity,
                                       child: M3EButton.tonal(
-                                        onPressed: () => _openInstructions(context, ref, set),
+                                        onPressed: () => _openInstructions(
+                                          context,
+                                          ref,
+                                          set,
+                                        ),
                                         child: const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.menu_book_rounded, size: 18),
+                                            Icon(
+                                              Icons.menu_book_rounded,
+                                              size: 18,
+                                            ),
                                             SizedBox(width: 8),
                                             Text('View Instructions'),
                                           ],
@@ -242,7 +297,8 @@ class DetailsPage extends HookConsumerWidget {
                                   Expanded(child: infoWidget),
                                   const SizedBox(width: 16),
                                   M3EButton.tonal(
-                                    onPressed: () => _openInstructions(context, ref, set),
+                                    onPressed: () =>
+                                        _openInstructions(context, ref, set),
                                     child: const Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -272,7 +328,10 @@ class DetailsPage extends HookConsumerWidget {
                               M3ESegment(
                                 value: LegoSetStatus.backlog,
                                 label: 'Backlog',
-                                icon: Icon(Icons.inventory_2_outlined, size: 16),
+                                icon: Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 16,
+                                ),
                               ),
                               M3ESegment(
                                 value: LegoSetStatus.currentlyBuilding,
@@ -282,7 +341,10 @@ class DetailsPage extends HookConsumerWidget {
                               M3ESegment(
                                 value: LegoSetStatus.built,
                                 label: 'Built',
-                                icon: Icon(Icons.check_circle_rounded, size: 16),
+                                icon: Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 16,
+                                ),
                               ),
                             ],
                             selected: {set.status},
@@ -320,7 +382,8 @@ class DetailsPage extends HookConsumerWidget {
                             child: M3EProgressIndicator.linearWavy(
                               value: progress,
                               color: getProgressColor(progress),
-                              trackColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                              trackColor: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.35),
                               strokeWidth: 4,
                               trackStrokeWidth: 4,
                             ),
@@ -346,7 +409,10 @@ class DetailsPage extends HookConsumerWidget {
                           filled: true,
                           suffixIcon: searchQuery.value.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.clear_rounded,
+                                    size: 18,
+                                  ),
                                   onPressed: () {
                                     searchController.clear();
                                     searchQuery.value = '';
@@ -421,21 +487,18 @@ class DetailsPage extends HookConsumerWidget {
                     final crossAxisCount = width < 600
                         ? 1
                         : width < 1050
-                            ? 2
-                            : width < 1500
-                                ? 3
-                                : 4;
+                        ? 2
+                        : width < 1500
+                        ? 3
+                        : 4;
 
                     return SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final part = filteredParts[index];
-                            return PartCard(key: ValueKey(part.id), part: part);
-                          },
-                          childCount: filteredParts.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final part = filteredParts[index];
+                          return PartCard(key: ValueKey(part.id), part: part);
+                        }, childCount: filteredParts.length),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
                           mainAxisExtent: 80,
@@ -459,14 +522,21 @@ class DetailsPage extends HookConsumerWidget {
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Text('Error loading set: $error', textAlign: TextAlign.center),
+            child: Text(
+              'Error loading set: $error',
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _openInstructions(BuildContext context, WidgetRef ref, LegoSet set) async {
+  Future<void> _openInstructions(
+    BuildContext context,
+    WidgetRef ref,
+    LegoSet set,
+  ) async {
     final key = ref.read(bricksetApiKeyProvider).value;
     if (key == null || key.isEmpty) {
       showSnack(context, 'Please set Brickset API Key in Settings');
@@ -474,9 +544,12 @@ class DetailsPage extends HookConsumerWidget {
     }
     try {
       final url = await bricksetApi.getInstructions2(key, set.setNum);
-      final result = UrlOpener.instance.open(url);
-      if (!result.success && context.mounted) {
-        showSnack(context, 'Error loading instructions: ${result.errorMessage}');
+      final launched = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        showSnack(context, 'Unable to open instructions');
       }
     } catch (e) {
       if (context.mounted) {
