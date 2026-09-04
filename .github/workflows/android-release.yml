@@ -71,6 +71,9 @@ jobs:
       - name: Get Flutter packages
         run: flutter pub get
 
+      - name: Generate source files
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Build signed APK
         run: |
           flutter build apk --release \
