@@ -30,7 +30,7 @@ static void my_application_activate(GApplication* application) {
   // If running on Wayland assume the header bar will work (may need changing
   // if future cases occur).
   gtk_window_set_title(window, "Lego App");
-  gtk_window_set_decorated(window, FALSE);
+  gtk_window_set_decorated(window, TRUE);
 
   
   

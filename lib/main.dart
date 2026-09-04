@@ -16,6 +16,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://ugeaobcrrhwqmvlpwmpw.supabase.co',
     publishableKey: 'sb_publishable_XYC10qjxJD7ryTFMVUBLUQ_rr6_gPkd',
+    postgrestOptions: const PostgrestClientOptions(schema: 'lego_app'),
   );
 
   runApp(const ProviderScope(child: App()));
@@ -25,7 +26,6 @@ Future<void> main() async {
     window?.minimumSize = const Size(360, 480);
     window?.setSize(const Size(1280, 760), false);
     window?.center();
-    window?.titleBarStyle = TitleBarStyle.hidden;
     window?.show();
   }
 }

@@ -11,7 +11,7 @@ import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:nativeapi/nativeapi.dart';
 
 class DetailsPage extends HookConsumerWidget {
   const DetailsPage({super.key, required this.setId});
@@ -474,7 +474,10 @@ class DetailsPage extends HookConsumerWidget {
     }
     try {
       final url = await bricksetApi.getInstructions2(key, set.setNum);
-      await launchUrl(Uri.parse(url));
+      final result = UrlOpener.instance.open(url);
+      if (!result.success && context.mounted) {
+        showSnack(context, 'Error loading instructions: ${result.errorMessage}');
+      }
     } catch (e) {
       if (context.mounted) {
         showSnack(context, 'Error loading instructions: $e');

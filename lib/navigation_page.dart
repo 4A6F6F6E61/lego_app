@@ -1,13 +1,8 @@
-import 'package:flutter/gestures.dart';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:lego_app/components/window_controls.dart';
-import 'package:nativeapi/nativeapi.dart';
 
 class NavigationPage extends ConsumerStatefulWidget {
   const NavigationPage({super.key, required this.navShell});
