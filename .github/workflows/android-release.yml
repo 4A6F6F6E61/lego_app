@@ -17,7 +17,6 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     env:
-      RELEASE_STORE_FILE: ${{ runner.temp }}/lego-tracker-upload.jks
       RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -65,7 +64,9 @@ jobs:
               exit 1
             fi
           done
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RELEASE_STORE_FILE"
+          release_store_file="$RUNNER_TEMP/lego-tracker-upload.jks"
+          echo "RELEASE_STORE_FILE=$release_store_file" >> "$GITHUB_ENV"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$release_store_file"
 
       - name: Get Flutter packages
         run: flutter pub get
