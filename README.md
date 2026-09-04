@@ -53,3 +53,44 @@ For future developers and AI agents, here is a high-level overview of how the ap
 2. Configure Supabase environment variables if building from scratch (the app currently initializes with a public key in `main.dart`).
 3. Run `flutter pub get` to install dependencies.
 4. Run `flutter run -d <platform>` to start the app.
+
+## Android releases and Obtainium
+
+Every push to `master` runs the **Android release** workflow. It builds a
+universal release APK, signs it with the project upload key, and publishes it
+as the latest GitHub Release. The APK is named `lego-tracker.apk`; its Android
+version code increases automatically, so Android and Obtainium recognize every
+new build as an update. The existing GitHub Pages Makefile is not used.
+
+### One-time repository setup
+
+Create an Android upload key once, keep a backup somewhere safe, and add these
+repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.jks` file |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_PASSWORD` | Key password |
+
+On Linux or macOS, run `scripts/create-android-keystore.sh` to create the key
+and print the Base64 value to paste into GitHub. Do not commit the generated
+`.jks` file or share its passwords. The workflow deliberately fails before
+publishing if any of these secrets are missing, which prevents accidentally
+shipping APKs signed by a different key.
+
+### Install and update with Obtainium
+
+1. In Obtainium, add `https://github.com/4A6F6F6E61/lego_app` as a GitHub app.
+2. Select the single `lego-tracker.apk` asset and install it.
+3. In the app's GitHub source options, enable **Verify Latest Tag**. This makes
+   Obtainium follow the release explicitly marked latest by GitHub.
+4. Enable Obtainium background checks/updates if desired.
+
+After that, push to `master`, wait for the **Android release** workflow to
+finish, and Obtainium will offer the new APK on its next check.
+
+If this app was previously installed from a differently signed APK, Android
+will require uninstalling that old copy once before installing the first
+release from this workflow. App data may be removed by that uninstall.

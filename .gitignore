@@ -46,6 +46,11 @@ app.*.map.json
 
 .env
 
+# Android upload keys and local signing configuration
+*.jks
+*.keystore
+android/key.properties
+
 *.g.dart
 
 dist
