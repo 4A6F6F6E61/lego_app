@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lego_app/components/export_missing_parts_dialog.dart';
 import 'package:lego_app/components/set_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/providers/db_providers.dart';
@@ -166,8 +167,6 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 500;
-
                   final syncCard = M3ECard(
                     variant: M3ECardVariant.filled,
                     color: theme.colorScheme.surfaceContainer,
@@ -264,10 +263,71 @@ class DashboardPage extends ConsumerWidget {
                     ),
                   );
 
+                  final orderMissingCard = M3ECard(
+                    variant: M3ECardVariant.filled,
+                    color: theme.colorScheme.surfaceContainer,
+                    border: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const ExportMissingPartsDialog(),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_cart_checkout_rounded,
+                              color: Color(0xFFEF4444),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Order Missing Parts',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Export to Rebrickable list',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  final isNarrow = constraints.maxWidth < 750;
+
                   if (isNarrow) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [syncCard, const SizedBox(height: 12), browseCard],
+                      children: [
+                        syncCard,
+                        const SizedBox(height: 12),
+                        browseCard,
+                        const SizedBox(height: 12),
+                        orderMissingCard,
+                      ],
                     );
                   }
 
@@ -276,6 +336,8 @@ class DashboardPage extends ConsumerWidget {
                       Expanded(child: syncCard),
                       const SizedBox(width: 12),
                       Expanded(child: browseCard),
+                      const SizedBox(width: 12),
+                      Expanded(child: orderMissingCard),
                     ],
                   );
                 },

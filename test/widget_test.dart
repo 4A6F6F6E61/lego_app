@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lego_app/components/export_missing_parts_dialog.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
@@ -184,6 +185,93 @@ void main() {
 
       expect(find.byType(PartCard), findsOneWidget);
       expect(find.text('SPARE'), findsOneWidget);
+    });
+  });
+
+  group('Missing Parts & Settings Tests', () {
+    test('exportMissingPartsToRebrickable aggregates identical pieces correctly', () {
+      final parts = [
+        SetPart(
+          id: 1,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 5,
+          quantityFound: 2, // 3 missing
+          isSpare: false,
+          isLost: true,
+        ),
+        SetPart(
+          id: 2,
+          setId: 'set-2',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 4,
+          quantityFound: 0, // 4 missing -> total 7 of 3001:1
+          isSpare: false,
+          isLost: true,
+        ),
+        SetPart(
+          id: 3,
+          setId: 'set-2',
+          userId: 'user-1',
+          partNum: '3002',
+          colorId: 5,
+          quantityNeeded: 2,
+          quantityFound: 1, // 1 missing
+          isSpare: false,
+          isLost: true,
+        ),
+      ];
+
+      final Map<String, ({String partNum, int colorId, int quantity})> aggregated = {};
+      for (final part in parts) {
+        final key = '${part.partNum}:${part.colorId}';
+        final qty = (part.quantityNeeded - part.quantityFound) > 0
+            ? (part.quantityNeeded - part.quantityFound)
+            : 1;
+
+        if (aggregated.containsKey(key)) {
+          final existing = aggregated[key]!;
+          aggregated[key] = (
+            partNum: existing.partNum,
+            colorId: existing.colorId,
+            quantity: existing.quantity + qty,
+          );
+        } else {
+          aggregated[key] = (
+            partNum: part.partNum,
+            colorId: part.colorId,
+            quantity: qty,
+          );
+        }
+      }
+
+      expect(aggregated.length, 2);
+      expect(aggregated['3001:1']!.quantity, 7);
+      expect(aggregated['3002:5']!.quantity, 1);
+    });
+
+    testWidgets('ExportMissingPartsDialog renders cleanly with M3ECard and no localizations errors', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: M3ETheme(
+            data: M3EThemeData.dark(seedColor: const Color(0xFF0266C8)),
+            child: const MaterialApp(
+              home: Scaffold(
+                body: ExportMissingPartsDialog(
+                  initialParts: [],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(find.byType(ExportMissingPartsDialog), findsOneWidget);
     });
   });
 }

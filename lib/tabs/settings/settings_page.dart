@@ -53,17 +53,22 @@ class SettingsPage extends HookConsumerWidget {
     }
 
     Future<void> startRebrickableSync(String token) async {
-      if (rebrickableAPIKey.value == null || rebrickableAPIKey.value!.isEmpty) {
-        showSnack(context, 'Please enter your Rebrickable API Key first.');
+      final apiKey = await ref.read(rebrickableApiKeyProvider.future);
+      if (apiKey == null || apiKey.isEmpty) {
+        if (context.mounted) {
+          showSnack(context, 'Please enter your Rebrickable API Key first.');
+        }
         return;
       }
       syncLoading.value = true;
-      showSnack(
-        context,
-        'Synchronization started... this may take a moment to fetch sets and parts.',
-      );
+      if (context.mounted) {
+        showSnack(
+          context,
+          'Synchronization started... this may take a moment to fetch sets and parts.',
+        );
+      }
       try {
-        await syncRebrickable(apiKey: rebrickableAPIKey.value!, userToken: token);
+        await syncRebrickable(apiKey: apiKey, userToken: token);
         if (context.mounted) {
           showDialog(
             context: context,
@@ -248,6 +253,10 @@ class SettingsPage extends HookConsumerWidget {
                             ],
                           ),
                         ),
+                        onFieldSubmitted: (val) async {
+                          await ref.read(rebrickableApiKeyProvider.notifier).set(val.trim());
+                          if (context.mounted) showSnack(context, 'Rebrickable API Key saved');
+                        },
                         obscureText: rbObscure.value,
                       ),
                       const SizedBox(height: 16),
@@ -255,12 +264,20 @@ class SettingsPage extends HookConsumerWidget {
                         data: (token) => token == null
                             ? M3EButton.tonal(
                                 onPressed: () async {
+                                  final apiKey = (await ref.read(rebrickableApiKeyProvider.future)) ?? '';
+                                  if (apiKey.isEmpty) {
+                                    if (context.mounted) {
+                                      showSnack(context, 'Please enter your Rebrickable API Key first.');
+                                    }
+                                    return;
+                                  }
+                                  if (!context.mounted) return;
                                   final newToken = await showDialog<String>(
                                     context: context,
                                     builder: (_) => LoginModal(
                                       login: (String u, String p) async {
                                         return await userApi.tokenCreate(
-                                          apiKey: rebrickableAPIKey.value ?? '',
+                                          apiKey: apiKey,
                                           username: u,
                                           password: p,
                                         );
@@ -386,6 +403,10 @@ class SettingsPage extends HookConsumerWidget {
                             ],
                           ),
                         ),
+                        onFieldSubmitted: (val) async {
+                          await ref.read(bricksetApiKeyProvider.notifier).set(val.trim());
+                          if (context.mounted) showSnack(context, 'Brickset API Key saved');
+                        },
                         obscureText: bsObscure.value,
                       ),
                     ],

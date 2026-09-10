@@ -537,9 +537,11 @@ class DetailsPage extends HookConsumerWidget {
     WidgetRef ref,
     LegoSet set,
   ) async {
-    final key = ref.read(bricksetApiKeyProvider).value;
+    final key = await ref.read(bricksetApiKeyProvider.future);
     if (key == null || key.isEmpty) {
-      showSnack(context, 'Please set Brickset API Key in Settings');
+      if (context.mounted) {
+        showSnack(context, 'Please set Brickset API Key in Settings');
+      }
       return;
     }
     try {

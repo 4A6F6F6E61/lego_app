@@ -35,54 +35,87 @@ class LoginModal extends HookWidget {
       }
     }
 
-    return AlertDialog(
-      title: const Text('Rebrickable Login'),
-      content: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Sign in to your Rebrickable account to synchronize your LEGO collection and sets.',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: username,
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-                filled: true,
+    final theme = Theme.of(context);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: M3ECard(
+          variant: M3ECardVariant.elevated,
+          borderRadius: BorderRadius.circular(24),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Rebrickable Login',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  M3EIconButton(
+                    variant: M3EIconButtonVariant.tonal,
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () => context.pop(),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: password,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-                filled: true,
+              const SizedBox(height: 12),
+              Text(
+                'Sign in to your Rebrickable account to synchronize your LEGO collection and sets.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              obscureText: true,
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: username,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  filled: true,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: password,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  filled: true,
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  M3EButton.text(
+                    onPressed: () => context.pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  M3EButton.filled(
+                    onPressed: loading.value ? () {} : submit,
+                    child: loading.value
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: M3EProgressIndicator.circular(),
+                          )
+                        : const Text('Sign In'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        M3EButton.text(
-          onPressed: () => context.pop(),
-          child: const Text('Cancel'),
-        ),
-        M3EButton.filled(
-          onPressed: loading.value ? () {} : submit,
-          child: loading.value
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: M3EProgressIndicator.circular(),
-                )
-              : const Text('Sign In'),
-        ),
-      ],
     );
   }
 }

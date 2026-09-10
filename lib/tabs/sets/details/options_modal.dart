@@ -1,6 +1,7 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/components/confirm_action_dialog.dart';
+import 'package:lego_app/components/export_missing_parts_dialog.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,6 +35,30 @@ class OptionsModal extends HookConsumerWidget {
         loading.value = true;
         await ref.read(setAllPartsToFoundProvider(setId).future);
         if (context.mounted) Navigator.of(context).pop();
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    Future<void> exportMissing() async {
+      if (loading.value) return;
+      try {
+        loading.value = true;
+        final parts = await ref.read(setPartsProvider(setId).future);
+        final missing = parts.where((p) => p.isLost).toList();
+        final set = await ref.read(setStreamProvider(setId).future);
+        final defaultTitle = set != null ? 'Missing Parts - ${set.setNum} ${set.name}' : null;
+
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          showDialog(
+            context: context,
+            builder: (_) => ExportMissingPartsDialog(
+              initialParts: missing,
+              defaultTitle: defaultTitle,
+            ),
+          );
+        }
       } finally {
         loading.value = false;
       }
@@ -122,6 +147,53 @@ class OptionsModal extends HookConsumerWidget {
                           ),
                           Text(
                             'Sets quantity found to 100% for all pieces',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            M3ECard(
+              variant: M3ECardVariant.filled,
+              color: theme.colorScheme.surfaceContainer,
+              border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+              onPressed: exportMissing,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_cart_checkout_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Export Missing Parts to Rebrickable',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Create a part list to order pieces on BrickLink/BrickOwl',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.outline,
                             ),

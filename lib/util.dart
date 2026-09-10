@@ -152,3 +152,106 @@ Color getProgressColor(double progress) {
   final t = (p - 0.5) / 0.5;
   return Color.lerp(const Color(0xFFF59E0B), const Color(0xFF10B981), t)!; // Amber -> Emerald
 }
+
+class MissingPartsExportResult {
+  final int listId;
+  final String listName;
+  final int uniquePartsCount;
+  final int totalQuantity;
+  final String webUrl;
+
+  const MissingPartsExportResult({
+    required this.listId,
+    required this.listName,
+    required this.uniquePartsCount,
+    required this.totalQuantity,
+    required this.webUrl,
+  });
+}
+
+Future<MissingPartsExportResult> exportMissingPartsToRebrickable({
+  required String apiKey,
+  required String userToken,
+  required String listName,
+  required List<SetPart> missingParts,
+}) async {
+  if (missingParts.isEmpty) {
+    throw 'No missing parts to export.';
+  }
+
+  // 1. Group and aggregate quantities for parts with the same partNum and colorId
+  final Map<String, ({String partNum, int colorId, int quantity})> aggregated = {};
+  for (final part in missingParts) {
+    final key = '${part.partNum}:${part.colorId}';
+    final qty = (part.quantityNeeded - part.quantityFound) > 0
+        ? (part.quantityNeeded - part.quantityFound)
+        : 1;
+
+    if (aggregated.containsKey(key)) {
+      final existing = aggregated[key]!;
+      aggregated[key] = (
+        partNum: existing.partNum,
+        colorId: existing.colorId,
+        quantity: existing.quantity + qty,
+      );
+    } else {
+      aggregated[key] = (
+        partNum: part.partNum,
+        colorId: part.colorId,
+        quantity: qty,
+      );
+    }
+  }
+
+  // 2. Create the part list on Rebrickable
+  final createRes = await userApi.createPartList(
+    apiKey: apiKey,
+    userToken: userToken,
+    name: listName,
+    isBuildable: true,
+  );
+  final listId = createRes['id'] as int;
+
+  // 3. Add the parts to the part list in chunks (up to 50 parts per batch)
+  final partsPayload = aggregated.values.map((item) => {
+    'part_num': item.partNum,
+    'color_id': item.colorId,
+    'quantity': item.quantity,
+  }).toList();
+
+  const chunkSize = 50;
+  for (var i = 0; i < partsPayload.length; i += chunkSize) {
+    final chunk = partsPayload.sublist(
+      i,
+      i + chunkSize > partsPayload.length ? partsPayload.length : i + chunkSize,
+    );
+    await userApi.addPartsToPartList(
+      apiKey: apiKey,
+      userToken: userToken,
+      listId: listId,
+      parts: chunk,
+    );
+  }
+
+  // 4. Retrieve user profile to construct the direct URL
+  String webUrl = 'https://rebrickable.com/users/';
+  try {
+    final profile = await userApi.getUserProfile(apiKey: apiKey, userToken: userToken);
+    final username = profile['username'] as String?;
+    if (username != null && username.isNotEmpty) {
+      webUrl = 'https://rebrickable.com/users/$username/partlists/$listId/';
+    }
+  } catch (e) {
+    dev.log('Could not fetch user profile for username URL: $e');
+  }
+
+  final totalQuantity = aggregated.values.fold<int>(0, (sum, e) => sum + e.quantity);
+
+  return MissingPartsExportResult(
+    listId: listId,
+    listName: listName,
+    uniquePartsCount: aggregated.length,
+    totalQuantity: totalQuantity,
+    webUrl: webUrl,
+  );
+}

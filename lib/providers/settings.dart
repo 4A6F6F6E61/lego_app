@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 part 'settings.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class UserToken extends _$UserToken {
   final String key = "userToken";
   @override
@@ -18,7 +18,7 @@ class UserToken extends _$UserToken {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class RebrickableApiKey extends _$RebrickableApiKey {
   final String key = "rebrickableApiKey";
   @override
@@ -33,7 +33,7 @@ class RebrickableApiKey extends _$RebrickableApiKey {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class BricksetApiKey extends _$BricksetApiKey {
   final String key = "bricksetApiKey";
   @override

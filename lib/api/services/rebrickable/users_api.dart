@@ -57,4 +57,53 @@ class UsersApi {
     );
     return SetCollectionResponse.fromJson(response);
   }
+
+  Future<Map<String, dynamic>> createPartList({
+    required String apiKey,
+    required String userToken,
+    required String name,
+    bool isBuildable = true,
+  }) async {
+    dev.log("Creating part list '$name' for user $userToken");
+    final response = await apiPost(
+      rebrickableApiPath,
+      '/users/$userToken/partlists/',
+      authHeaderKey: apiKey,
+      body: {
+        'name': name,
+        'is_buildable': isBuildable,
+      },
+      form: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  Future<dynamic> addPartsToPartList({
+    required String apiKey,
+    required String userToken,
+    required int listId,
+    required List<Map<String, dynamic>> parts,
+  }) async {
+    dev.log("Adding ${parts.length} parts to list $listId for user $userToken");
+    return apiPost(
+      rebrickableApiPath,
+      '/users/$userToken/partlists/$listId/parts/',
+      authHeaderKey: apiKey,
+      body: parts,
+      form: false,
+    );
+  }
+
+  Future<Map<String, dynamic>> getUserProfile({
+    required String apiKey,
+    required String userToken,
+  }) async {
+    dev.log("Fetching profile for user $userToken");
+    final response = await apiGet(
+      rebrickableApiPath,
+      '/users/$userToken/profile/',
+      authHeaderKey: apiKey,
+    );
+    return response as Map<String, dynamic>;
+  }
 }

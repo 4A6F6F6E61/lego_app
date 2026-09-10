@@ -9,6 +9,7 @@ A cross-platform LEGO set rebuilding and inventory tracking application. Built w
   - Manage individual parts needed for a set.
   - Mark parts as found, missing, or spare.
   - "Unable to find" parts highlight in red, and "Spare" parts in purple for quick visual identification.
+- **Rebrickable Missing Parts Ordering:** Quick Action to export all pieces marked as "Unable to find" across sets into a new custom Rebrickable Part List. From there, users can directly purchase pieces on BrickLink or BrickOwl using Rebrickable's multi-store buying integration.
 - **Rebrickable Integration:** Securely sync your collection, fetch accurate part metadata, and load official Lego colors.
 - **Brickset Integration:** Automatically fetch and open official PDF building instructions for your sets.
 - **Cross-Platform & Desktop Native:** Optimized for all screen sizes with responsive dashboards, navigation rails, and a seamless native desktop experience (using `window_manager` for window management and `url_launcher` for URL launching).

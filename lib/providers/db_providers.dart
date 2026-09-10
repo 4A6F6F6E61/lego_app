@@ -51,6 +51,34 @@ Future<List<SetPart>> setParts(Ref ref, String setId) async {
 }
 
 @riverpod
+Future<List<SetPart>> allMissingParts(Ref ref) async {
+  if (auth.currentUser == null) return [];
+
+  final response = await supabase
+      .from('set_parts')
+      .select()
+      .eq('user_id', auth.currentUser!.id)
+      .eq('is_lost', true)
+      .order('color_id', ascending: true)
+      .order('part_num', ascending: true);
+
+  return response.map((json) => SetPart.fromJson(json)).toList();
+}
+
+Future<List<SetPart>> fetchAllMissingParts() async {
+  if (auth.currentUser == null) return [];
+  final response = await supabase
+      .from('set_parts')
+      .select()
+      .eq('user_id', auth.currentUser!.id)
+      .eq('is_lost', true)
+      .order('color_id', ascending: true)
+      .order('part_num', ascending: true);
+
+  return response.map((json) => SetPart.fromJson(json)).toList();
+}
+
+@riverpod
 Stream<LegoSet?> setStream(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value(null);
 
