@@ -154,18 +154,20 @@ Color getProgressColor(double progress) {
 }
 
 class MissingPartsExportResult {
-  final int listId;
+  final int? listId;
   final String listName;
   final int uniquePartsCount;
   final int totalQuantity;
   final String webUrl;
+  final bool isLostParts;
 
   const MissingPartsExportResult({
-    required this.listId,
+    this.listId,
     required this.listName,
     required this.uniquePartsCount,
     required this.totalQuantity,
     required this.webUrl,
+    this.isLostParts = false,
   });
 }
 
@@ -253,5 +255,66 @@ Future<MissingPartsExportResult> exportMissingPartsToRebrickable({
     uniquePartsCount: aggregated.length,
     totalQuantity: totalQuantity,
     webUrl: webUrl,
+  );
+}
+
+Future<MissingPartsExportResult> exportToLostParts({
+  required String apiKey,
+  required String userToken,
+  required List<SetPart> missingParts,
+}) async {
+  if (missingParts.isEmpty) {
+    throw 'No missing parts to export.';
+  }
+
+  // 1. Group and aggregate quantities for parts with the same inventory part id
+  final Map<int, int> aggregated = {};
+  for (final part in missingParts) {
+    final qty = (part.quantityNeeded - part.quantityFound) > 0
+        ? (part.quantityNeeded - part.quantityFound)
+        : 1;
+    aggregated[part.id] = (aggregated[part.id] ?? 0) + qty;
+  }
+
+  // 2. Add the parts to the lost parts list in chunks (up to 50 parts per batch)
+  final partsPayload = aggregated.entries.map((entry) => {
+    'inv_part_id': entry.key,
+    'lost_quantity': entry.value,
+  }).toList();
+
+  const chunkSize = 50;
+  for (var i = 0; i < partsPayload.length; i += chunkSize) {
+    final chunk = partsPayload.sublist(
+      i,
+      i + chunkSize > partsPayload.length ? partsPayload.length : i + chunkSize,
+    );
+    await userApi.addLostParts(
+      apiKey: apiKey,
+      userToken: userToken,
+      parts: chunk,
+    );
+  }
+
+  // 3. Retrieve user profile to construct the direct URL
+  String webUrl = 'https://rebrickable.com/users/';
+  try {
+    final profile = await userApi.getUserProfile(apiKey: apiKey, userToken: userToken);
+    final username = profile['username'] as String?;
+    if (username != null && username.isNotEmpty) {
+      webUrl = 'https://rebrickable.com/users/$username/lostparts/';
+    }
+  } catch (e) {
+    dev.log('Could not fetch user profile for username URL: $e');
+  }
+
+  final totalQuantity = aggregated.values.fold<int>(0, (sum, qty) => sum + qty);
+
+  return MissingPartsExportResult(
+    listId: null,
+    listName: 'My Lost Parts',
+    uniquePartsCount: aggregated.length,
+    totalQuantity: totalQuantity,
+    webUrl: webUrl,
+    isLostParts: true,
   );
 }

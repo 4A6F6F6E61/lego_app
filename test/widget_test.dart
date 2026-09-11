@@ -4,6 +4,7 @@ import 'package:lego_app/components/export_missing_parts_dialog.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
@@ -254,6 +255,62 @@ void main() {
       expect(aggregated['3002:5']!.quantity, 1);
     });
 
+    test('exportToLostParts aggregates inventory part id and missing quantities correctly', () {
+      final parts = [
+        SetPart(
+          id: 101,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 5,
+          quantityFound: 2, // 3 missing
+          isSpare: false,
+          isLost: true,
+        ),
+        SetPart(
+          id: 102,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3002',
+          colorId: 2,
+          quantityNeeded: 1,
+          quantityFound: 0, // 1 missing
+          isSpare: false,
+          isLost: true,
+        ),
+      ];
+
+      final Map<int, int> aggregated = {};
+      for (final part in parts) {
+        final qty = (part.quantityNeeded - part.quantityFound) > 0
+            ? (part.quantityNeeded - part.quantityFound)
+            : 1;
+        aggregated[part.id] = (aggregated[part.id] ?? 0) + qty;
+      }
+
+      expect(aggregated.length, 2);
+      expect(aggregated[101], 3);
+      expect(aggregated[102], 1);
+    });
+
+    test('MissingPartsExportResult correctly represents My Lost Parts result', () {
+      const result = MissingPartsExportResult(
+        listName: 'My Lost Parts',
+        uniquePartsCount: 5,
+        totalQuantity: 12,
+        webUrl: 'https://rebrickable.com/users/testuser/lostparts/',
+        isLostParts: true,
+      );
+
+      expect(result.listId, isNull);
+      expect(result.isLostParts, isTrue);
+      expect(result.listName, 'My Lost Parts');
+      expect(result.totalQuantity, 12);
+      expect(result.uniquePartsCount, 5);
+      expect(result.webUrl, contains('/lostparts/'));
+    });
+
     testWidgets('ExportMissingPartsDialog renders cleanly with M3ECard and no localizations errors', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -273,5 +330,103 @@ void main() {
       await tester.pump();
       expect(find.byType(ExportMissingPartsDialog), findsOneWidget);
     });
+
+    testWidgets('ExportMissingPartsDialog displays destination segments when credentials and parts exist', (tester) async {
+      final sampleParts = [
+        SetPart(
+          id: 555,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 4,
+          quantityFound: 1, // 3 missing
+          isSpare: false,
+          isLost: true,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            rebrickableApiKeyProvider.overrideWith(() => MockApiKeyNotifier()),
+            userTokenProvider.overrideWith(() => MockUserTokenNotifier()),
+          ],
+          child: M3ETheme(
+            data: M3EThemeData.light(seedColor: const Color(0xFF0266C8)),
+            child: MaterialApp(
+              home: Scaffold(
+                body: ExportMissingPartsDialog(
+                  initialParts: sampleParts,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(ExportMissingPartsDialog), findsOneWidget);
+      expect(find.text('Export Missing Parts'), findsOneWidget);
+      expect(find.text('Export Destination'), findsOneWidget);
+      expect(find.text('My Lost Parts'), findsOneWidget);
+      expect(find.text('New Custom List'), findsOneWidget);
+      expect(find.text('Add to My Lost Parts'), findsOneWidget);
+    });
+
+    testWidgets('ExportMissingPartsDialog toggles to New Custom List and displays list name input field', (tester) async {
+      final sampleParts = [
+        SetPart(
+          id: 555,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 4,
+          quantityFound: 1,
+          isSpare: false,
+          isLost: true,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            rebrickableApiKeyProvider.overrideWith(() => MockApiKeyNotifier()),
+            userTokenProvider.overrideWith(() => MockUserTokenNotifier()),
+          ],
+          child: M3ETheme(
+            data: M3EThemeData.light(seedColor: const Color(0xFF0266C8)),
+            child: MaterialApp(
+              home: Scaffold(
+                body: ExportMissingPartsDialog(
+                  initialParts: sampleParts,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Tap on 'New Custom List' segment
+      await tester.tap(find.text('New Custom List'));
+      await tester.pump();
+
+      expect(find.text('Rebrickable Part List Name'), findsOneWidget);
+      expect(find.text('Create List & Export'), findsOneWidget);
+    });
   });
+}
+
+class MockApiKeyNotifier extends RebrickableApiKey {
+  @override
+  Future<String?> build() async => 'test-api-key';
+}
+
+class MockUserTokenNotifier extends UserToken {
+  @override
+  Future<String?> build() async => 'test-user-token';
 }

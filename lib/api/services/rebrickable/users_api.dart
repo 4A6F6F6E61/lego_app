@@ -106,4 +106,38 @@ class UsersApi {
     );
     return response as Map<String, dynamic>;
   }
+
+  Future<Map<String, dynamic>> getLostParts({
+    required String apiKey,
+    required String userToken,
+    int? page,
+    int? pageSize,
+  }) async {
+    dev.log("Fetching lost parts for user $userToken");
+    final response = await apiGet(
+      rebrickableApiPath,
+      '/users/$userToken/lost_parts/',
+      authHeaderKey: apiKey,
+      queryParameters: {
+        'page': page,
+        'page_size': pageSize,
+      },
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  Future<dynamic> addLostParts({
+    required String apiKey,
+    required String userToken,
+    required List<Map<String, dynamic>> parts,
+  }) async {
+    dev.log("Adding ${parts.length} lost parts for user $userToken");
+    return apiPost(
+      rebrickableApiPath,
+      '/users/$userToken/lost_parts/',
+      authHeaderKey: apiKey,
+      body: parts,
+      form: false,
+    );
+  }
 }
