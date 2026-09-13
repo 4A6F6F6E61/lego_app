@@ -20,6 +20,7 @@ class SettingsPage extends HookConsumerWidget {
     final userTokenAsync = ref.watch(userTokenProvider);
     final rebrickableAPIKey = ref.watch(rebrickableApiKeyProvider);
     final bricksetAPIKey = ref.watch(bricksetApiKeyProvider);
+    final sortOption = ref.watch(partSortProvider);
     final theme = Theme.of(context);
 
     final rbApiKeyTC = useTextEditingController();
@@ -408,6 +409,69 @@ class SettingsPage extends HookConsumerWidget {
                           if (context.mounted) showSnack(context, 'Brickset API Key saved');
                         },
                         obscureText: bsObscure.value,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Display Preferences Card
+              M3ECard(
+                variant: M3ECardVariant.filled,
+                color: theme.colorScheme.surfaceContainer,
+                border: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.tune_rounded, size: 20, color: theme.colorScheme.primary),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Display Preferences',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Default Parts Sorting',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Choose how parts are grouped and ordered in set details',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      M3ESegmentedButton<PartSortOption>(
+                        segments: const [
+                          M3ESegment(
+                            value: PartSortOption.color,
+                            label: 'Color',
+                            icon: Icon(Icons.palette_outlined, size: 16),
+                          ),
+                          M3ESegment(
+                            value: PartSortOption.type,
+                            label: 'Type',
+                            icon: Icon(Icons.category_outlined, size: 16),
+                          ),
+                        ],
+                        selected: {sortOption},
+                        onSelectionChanged: (val) {
+                          if (val.isNotEmpty) {
+                            ref.read(partSortProvider.notifier).set(val.first);
+                          }
+                        },
                       ),
                     ],
                   ),

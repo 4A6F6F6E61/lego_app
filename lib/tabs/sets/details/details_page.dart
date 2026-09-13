@@ -22,6 +22,7 @@ class DetailsPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setAsync = ref.watch(setStreamProvider(setId));
     final partsAsync = ref.watch(setPartsStreamProvider(setId));
+    final sortOption = ref.watch(partSortProvider);
     final theme = Theme.of(context);
 
     final searchQuery = useState<String>('');
@@ -89,6 +90,7 @@ class DetailsPage extends HookConsumerWidget {
             }
             return true;
           }).toList();
+          final sortedParts = sortParts(filteredParts, sortOption);
 
           final missingCount = allParts
               .where((p) => !p.isFinished && !p.isSpare)
@@ -448,13 +450,54 @@ class DetailsPage extends HookConsumerWidget {
                         },
                       ),
                       const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.sort_rounded,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Sort by:',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: M3ESegmentedButton<PartSortOption>(
+                              segments: const [
+                                M3ESegment(
+                                  value: PartSortOption.color,
+                                  label: 'Color',
+                                  icon: Icon(Icons.palette_outlined, size: 16),
+                                ),
+                                M3ESegment(
+                                  value: PartSortOption.type,
+                                  label: 'Type',
+                                  icon: Icon(Icons.category_outlined, size: 16),
+                                ),
+                              ],
+                              selected: {sortOption},
+                              onSelectionChanged: (val) {
+                                if (val.isNotEmpty) {
+                                  ref.read(partSortProvider.notifier).set(val.first);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
               ),
 
               // Parts Grid
-              if (filteredParts.isEmpty)
+              if (sortedParts.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -496,9 +539,9 @@ class DetailsPage extends HookConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverGrid(
                         delegate: SliverChildBuilderDelegate((context, index) {
-                          final part = filteredParts[index];
+                          final part = sortedParts[index];
                           return PartCard(key: ValueKey(part.id), part: part);
-                        }, childCount: filteredParts.length),
+                        }, childCount: sortedParts.length),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
                           mainAxisExtent: 80,

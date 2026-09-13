@@ -419,6 +419,188 @@ void main() {
       expect(find.text('Create List & Export'), findsOneWidget);
     });
   });
+
+  group('Part Sorting Tests', () {
+    test('compareNatural performs natural alphanumeric comparison', () {
+      expect(compareNatural('Brick 1 x 2', 'Brick 1 x 10'), isNegative);
+      expect(compareNatural('Brick 1 x 10', 'Brick 1 x 2'), isPositive);
+      expect(compareNatural('Brick 1 x 1', 'Brick 1 x 2'), isNegative);
+      expect(compareNatural('brick 1 x 1', 'BRICK 1 X 1'), 0);
+      expect(compareNatural('Plate 2 x 4', 'Brick 2 x 4'), isPositive);
+    });
+
+    test('sortParts by color groups by colorId first, then type', () {
+      final parts = [
+        SetPart(
+          id: 1,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 5,
+          name: 'Brick 2 x 4',
+          quantityNeeded: 2,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 2,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3020',
+          colorId: 1,
+          name: 'Plate 2 x 4',
+          quantityNeeded: 1,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 3,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3005',
+          colorId: 1,
+          name: 'Brick 1 x 1',
+          quantityNeeded: 3,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+      ];
+
+      final sorted = sortParts(parts, PartSortOption.color);
+      // colorId 1 ("Brick 1 x 1") first, colorId 1 ("Plate 2 x 4") second, colorId 5 ("Brick 2 x 4") third
+      expect(sorted[0].id, 3);
+      expect(sorted[1].id, 2);
+      expect(sorted[2].id, 1);
+    });
+
+    test('sortParts by type groups identical types together across colors with natural sort', () {
+      final parts = [
+        SetPart(
+          id: 1,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 15,
+          name: 'Brick 2 x 4',
+          quantityNeeded: 2,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 2,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          name: 'Brick 2 x 4',
+          quantityNeeded: 1,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 3,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '3004',
+          colorId: 5,
+          name: 'Brick 1 x 2',
+          quantityNeeded: 4,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 4,
+          setId: 'set-1',
+          userId: 'user-1',
+          partNum: '6111',
+          colorId: 2,
+          name: 'Brick 1 x 10',
+          quantityNeeded: 1,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+      ];
+
+      final sorted = sortParts(parts, PartSortOption.type);
+      // 1. "Brick 1 x 2" (id: 3)
+      // 2. "Brick 1 x 10" (id: 4) - natural sort: 1x2 < 1x10
+      // 3. "Brick 2 x 4" colorId 1 (id: 2)
+      // 4. "Brick 2 x 4" colorId 15 (id: 1)
+      expect(sorted[0].id, 3);
+      expect(sorted[1].id, 4);
+      expect(sorted[2].id, 2);
+      expect(sorted[3].id, 1);
+    });
+
+    test('partSortProvider defaults to color and updates to type', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(container.read(partSortProvider), PartSortOption.color);
+      container.read(partSortProvider.notifier).set(PartSortOption.type);
+      expect(container.read(partSortProvider), PartSortOption.type);
+    });
+
+    testWidgets('PartSortOption segmented button toggles correctly and updates selection', (tester) async {
+      PartSortOption selected = PartSortOption.color;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return Center(
+                  child: SizedBox(
+                    width: 300,
+                    child: M3ESegmentedButton<PartSortOption>(
+                      segments: const [
+                        M3ESegment(
+                          value: PartSortOption.color,
+                          label: 'Color',
+                          icon: Icon(Icons.palette_outlined, size: 16),
+                        ),
+                        M3ESegment(
+                          value: PartSortOption.type,
+                          label: 'Type',
+                          icon: Icon(Icons.category_outlined, size: 16),
+                        ),
+                      ],
+                      selected: {selected},
+                      onSelectionChanged: (val) {
+                        if (val.isNotEmpty) {
+                          setState(() {
+                            selected = val.first;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Color'), findsOneWidget);
+      expect(find.text('Type'), findsOneWidget);
+
+      await tester.tap(find.text('Type'));
+      await tester.pump();
+      expect(selected, PartSortOption.type);
+
+      await tester.tap(find.text('Color'));
+      await tester.pump();
+      expect(selected, PartSortOption.color);
+    });
+  });
 }
 
 class MockApiKeyNotifier extends RebrickableApiKey {

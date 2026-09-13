@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lego_app/util.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -62,3 +64,33 @@ Future<void> _clear(String key) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(key);
 }
+
+class PartSortNotifier extends Notifier<PartSortOption> {
+  static const _key = 'partSortOption';
+
+  @override
+  PartSortOption build() {
+    _load();
+    return PartSortOption.color;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final val = prefs.getString(_key);
+    if (val == PartSortOption.type.name) {
+      state = PartSortOption.type;
+    } else if (val == PartSortOption.color.name) {
+      state = PartSortOption.color;
+    }
+  }
+
+  Future<void> set(PartSortOption option) async {
+    state = option;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, option.name);
+  }
+}
+
+final partSortProvider = NotifierProvider<PartSortNotifier, PartSortOption>(
+  PartSortNotifier.new,
+);

@@ -318,3 +318,74 @@ Future<MissingPartsExportResult> exportToLostParts({
     isLostParts: true,
   );
 }
+
+enum PartSortOption {
+  color,
+  type;
+
+  String get label => switch (this) {
+    PartSortOption.color => 'Color',
+    PartSortOption.type => 'Type',
+  };
+}
+
+int compareNatural(String a, String b) {
+  final strA = a.toLowerCase();
+  final strB = b.toLowerCase();
+  if (strA == strB) return 0;
+
+  final regex = RegExp(r'(\d+)|(\D+)');
+  final matchesA = regex.allMatches(strA).map((m) => m.group(0)!).toList();
+  final matchesB = regex.allMatches(strB).map((m) => m.group(0)!).toList();
+
+  final minLen = matchesA.length < matchesB.length ? matchesA.length : matchesB.length;
+  for (var i = 0; i < minLen; i++) {
+    final tokenA = matchesA[i];
+    final tokenB = matchesB[i];
+
+    final numA = int.tryParse(tokenA);
+    final numB = int.tryParse(tokenB);
+
+    if (numA != null && numB != null) {
+      final numCompare = numA.compareTo(numB);
+      if (numCompare != 0) return numCompare;
+    } else {
+      final strCompare = tokenA.compareTo(tokenB);
+      if (strCompare != 0) return strCompare;
+    }
+  }
+  return matchesA.length.compareTo(matchesB.length);
+}
+
+List<SetPart> sortParts(List<SetPart> parts, PartSortOption sortOption) {
+  final list = List<SetPart>.of(parts);
+  list.sort((a, b) {
+    if (sortOption == PartSortOption.type) {
+      // Primary sort: Type (part name, fallback to partNum)
+      final nameA = (a.name?.trim().isNotEmpty == true ? a.name!.trim() : a.partNum);
+      final nameB = (b.name?.trim().isNotEmpty == true ? b.name!.trim() : b.partNum);
+      final typeCompare = compareNatural(nameA, nameB);
+      if (typeCompare != 0) return typeCompare;
+
+      // Secondary sort: partNum if names were identical
+      final partNumCompare = compareNatural(a.partNum, b.partNum);
+      if (partNumCompare != 0) return partNumCompare;
+
+      // Tertiary sort: colorId
+      return a.colorId.compareTo(b.colorId);
+    } else {
+      // Primary sort: Color (colorId, like it is right now)
+      final colorCompare = a.colorId.compareTo(b.colorId);
+      if (colorCompare != 0) return colorCompare;
+
+      // Secondary sort: Type (part name / partNum)
+      final nameA = (a.name?.trim().isNotEmpty == true ? a.name!.trim() : a.partNum);
+      final nameB = (b.name?.trim().isNotEmpty == true ? b.name!.trim() : b.partNum);
+      final typeCompare = compareNatural(nameA, nameB);
+      if (typeCompare != 0) return typeCompare;
+
+      return compareNatural(a.partNum, b.partNum);
+    }
+  });
+  return list;
+}
