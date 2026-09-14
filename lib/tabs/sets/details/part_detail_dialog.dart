@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lego_app/components/image_viewer.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/rebrickable_providers.dart';
@@ -68,39 +69,94 @@ class PartDetailDialog extends HookConsumerWidget {
 
               // Part Image Tile
               Center(
-                child: Container(
-                  width: 110,
-                  height: 110,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: part.imgUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: proxiedImageUrl(part.imgUrl!),
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => const Center(
-                            child: SizedBox.square(
-                              dimension: 24,
-                              child: M3EProgressIndicator.circular(),
+                child: part.imgUrl != null
+                    ? MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => openImageViewer(
+                            context,
+                            imageUrl: part.imgUrl!,
+                            title: part.name ?? 'Part ${part.partNum}',
+                          ),
+                          child: Tooltip(
+                            message: 'Tap to enlarge',
+                            child: Container(
+                              width: 110,
+                              height: 110,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: CachedNetworkImage(
+                                      imageUrl: proxiedImageUrl(part.imgUrl!),
+                                      fit: BoxFit.contain,
+                                      placeholder: (context, url) => const Center(
+                                        child: SizedBox.square(
+                                          dimension: 24,
+                                          child: M3EProgressIndicator.circular(),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) => const Icon(
+                                        Icons.extension_outlined,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.45),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Icon(
+                                        Icons.zoom_in_rounded,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          errorWidget: (context, url, error) => const Icon(
-                            Icons.extension_outlined,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
-                        )
-                      : const Icon(Icons.extension_outlined, size: 40, color: Colors.grey),
-                ),
+                        ),
+                      )
+                    : Container(
+                        width: 110,
+                        height: 110,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.extension_outlined,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
+                      ),
               ),
               const SizedBox(height: 14),
 

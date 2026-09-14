@@ -2,11 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
+import 'package:lego_app/api/services/brickset_api.dart';
+import 'package:lego_app/components/image_viewer.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
+import 'package:lego_app/tabs/sets/details/instructions_modal.dart';
 import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -87,6 +90,8 @@ class DetailsPage extends HookConsumerWidget {
               return part.isFinished && !part.isSpare;
             } else if (selectedFilter.value == 'spares') {
               return part.isSpare;
+            } else if (selectedFilter.value == 'lost') {
+              return part.isLost;
             }
             return true;
           }).toList();
@@ -99,6 +104,7 @@ class DetailsPage extends HookConsumerWidget {
               .where((p) => p.isFinished && !p.isSpare)
               .length;
           final sparesCount = allParts.where((p) => p.isSpare).length;
+          final lostCount = allParts.where((p) => p.isLost).length;
 
           return CustomScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -124,7 +130,7 @@ class DetailsPage extends HookConsumerWidget {
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isCompact = constraints.maxWidth < 600;
-                              final imageWidget = Container(
+                              final imageContainer = Container(
                                 width: isCompact ? 95 : 120,
                                 height: isCompact ? 95 : 120,
                                 decoration: BoxDecoration(
@@ -142,22 +148,44 @@ class DetailsPage extends HookConsumerWidget {
                                 ),
                                 padding: const EdgeInsets.all(8),
                                 child: set.imgUrl != null
-                                    ? CachedNetworkImage(
-                                        imageUrl: proxiedImageUrl(set.imgUrl!),
-                                        fit: BoxFit.contain,
-                                        placeholder: (context, url) => const Center(
-                                          child: SizedBox.square(
-                                            dimension: 24,
-                                            child:
-                                                M3EProgressIndicator.circular(),
-                                          ),
-                                        ),
-                                        errorWidget: (context, url, error) =>
-                                            const Icon(
-                                              Icons.extension_outlined,
-                                              size: 40,
-                                              color: Colors.grey,
+                                    ? Stack(
+                                        children: [
+                                          Positioned.fill(
+                                            child: CachedNetworkImage(
+                                              imageUrl: proxiedImageUrl(set.imgUrl!),
+                                              fit: BoxFit.contain,
+                                              placeholder: (context, url) => const Center(
+                                                child: SizedBox.square(
+                                                  dimension: 24,
+                                                  child:
+                                                      M3EProgressIndicator.circular(),
+                                                ),
+                                              ),
+                                              errorWidget: (context, url, error) =>
+                                                  const Icon(
+                                                    Icons.extension_outlined,
+                                                    size: 40,
+                                                    color: Colors.grey,
+                                                  ),
                                             ),
+                                          ),
+                                          Positioned(
+                                            right: 0,
+                                            bottom: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(3),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(alpha: 0.45),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: const Icon(
+                                                Icons.zoom_in_rounded,
+                                                size: 14,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       )
                                     : const Icon(
                                         Icons.extension_outlined,
@@ -165,6 +193,23 @@ class DetailsPage extends HookConsumerWidget {
                                         color: Colors.grey,
                                       ),
                               );
+
+                              final imageWidget = set.imgUrl != null
+                                  ? MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () => openImageViewer(
+                                          context,
+                                          imageUrl: set.imgUrl!,
+                                          title: '${set.setNum} - ${set.name}',
+                                        ),
+                                        child: Tooltip(
+                                          message: 'Tap to enlarge',
+                                          child: imageContainer,
+                                        ),
+                                      ),
+                                    )
+                                  : imageContainer;
 
                               final infoWidget = Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,6 +471,7 @@ class DetailsPage extends HookConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       M3ESegmentedButton<String>(
+                        showSelectedIcon: false,
                         segments: [
                           M3ESegment(
                             value: 'all',
@@ -442,6 +488,10 @@ class DetailsPage extends HookConsumerWidget {
                           M3ESegment(
                             value: 'spares',
                             label: 'Spares ($sparesCount)',
+                          ),
+                          M3ESegment(
+                            value: 'lost',
+                            label: 'Lost ($lostCount)',
                           ),
                         ],
                         selected: {selectedFilter.value},
@@ -588,13 +638,33 @@ class DetailsPage extends HookConsumerWidget {
       return;
     }
     try {
-      final url = await bricksetApi.getInstructions2(key, set.setNum);
-      final launched = await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched && context.mounted) {
-        showSnack(context, 'Unable to open instructions');
+      final instructions = await bricksetApi.getInstructions(key, set.setNum);
+      if (!context.mounted) return;
+
+      if (instructions.isEmpty) {
+        showSnack(context, 'No instructions found for ${set.setNum}');
+        return;
+      }
+
+      if (instructions.length == 1) {
+        final launched = await launchUrl(
+          Uri.parse(instructions.first.url),
+          mode: LaunchMode.externalApplication,
+        );
+        if (!launched && context.mounted) {
+          showSnack(context, 'Unable to open instructions');
+        }
+      } else {
+        showModalBottomSheet(
+          context: context,
+          isDismissible: true,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => InstructionsModal(
+            set: set,
+            instructions: instructions,
+          ),
+        );
       }
     } catch (e) {
       if (context.mounted) {

@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lego_app/api/services/brickset_api.dart';
 import 'package:lego_app/components/export_missing_parts_dialog.dart';
+import 'package:lego_app/components/image_viewer.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/settings.dart';
+import 'package:lego_app/tabs/sets/details/instructions_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
@@ -599,6 +602,274 @@ void main() {
       await tester.tap(find.text('Color'));
       await tester.pump();
       expect(selected, PartSortOption.color);
+    });
+  });
+
+  group('LegoInstruction Model Tests', () {
+    test('LegoInstruction.fromJson correctly parses fields', () {
+      final json = {
+        'URL': 'https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6151174.pdf',
+        'description': 'BI 3004/60, 60132 1/2 V29',
+      };
+      final instruction = LegoInstruction.fromJson(json);
+      expect(instruction.url, 'https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6151174.pdf');
+      expect(instruction.description, 'BI 3004/60, 60132 1/2 V29');
+    });
+
+    test('LegoInstruction.fromJson falls back to default description if empty or null', () {
+      final jsonNoDesc = {
+        'URL': 'https://example.com/manual.pdf',
+      };
+      final instruction = LegoInstruction.fromJson(jsonNoDesc);
+      expect(instruction.description, 'Instruction Booklet');
+      expect(instruction.url, 'https://example.com/manual.pdf');
+    });
+  });
+
+  group('Lost Parts Filter Logic Tests', () {
+    final parts = [
+      SetPart(
+        id: 1,
+        setId: 'set-1',
+        userId: 'user-1',
+        partNum: '3001',
+        colorId: 1,
+        quantityNeeded: 5,
+        quantityFound: 2,
+        isSpare: false,
+        isLost: false,
+      ),
+      SetPart(
+        id: 2,
+        setId: 'set-1',
+        userId: 'user-1',
+        partNum: '3002',
+        colorId: 2,
+        quantityNeeded: 3,
+        quantityFound: 3,
+        isSpare: false,
+        isLost: false,
+      ),
+      SetPart(
+        id: 3,
+        setId: 'set-1',
+        userId: 'user-1',
+        partNum: '3003',
+        colorId: 3,
+        quantityNeeded: 2,
+        quantityFound: 0,
+        isSpare: false,
+        isLost: true, // Marked as lost
+      ),
+      SetPart(
+        id: 4,
+        setId: 'set-1',
+        userId: 'user-1',
+        partNum: '3004',
+        colorId: 4,
+        quantityNeeded: 1,
+        quantityFound: 0,
+        isSpare: true,
+        isLost: true, // Lost spare
+      ),
+    ];
+
+    test('lost parts filter returns only parts where isLost is true', () {
+      final lostParts = parts.where((p) => p.isLost).toList();
+      expect(lostParts.length, 2);
+      expect(lostParts.map((p) => p.id), containsAll([3, 4]));
+    });
+
+    test('lostCount is accurate count of lost parts', () {
+      final lostCount = parts.where((p) => p.isLost).length;
+      expect(lostCount, 2);
+    });
+  });
+
+  group('InstructionsModal Widget Tests', () {
+    testWidgets('renders all instruction booklets and set header', (tester) async {
+      final set = LegoSet(
+        id: 'set-uuid',
+        userId: 'user-uuid',
+        setNum: '60132-1',
+        name: 'Service Station',
+        year: 2016,
+        themeId: 52,
+        imgUrl: 'https://example.com/set.jpg',
+        status: LegoSetStatus.currentlyBuilding,
+        createdAt: DateTime.now(),
+      );
+
+      final instructions = [
+        const LegoInstruction(
+          description: 'BI 3004/60, 60132 1/2 V29',
+          url: 'https://example.com/manual1.pdf',
+        ),
+        const LegoInstruction(
+          description: 'BI 3004/60, 60132 2/2 V29',
+          url: 'https://example.com/manual2.pdf',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: InstructionsModal(
+              set: set,
+              instructions: instructions,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Building Instructions'), findsOneWidget);
+      expect(find.text('60132-1 • 2 booklets available'), findsOneWidget);
+      expect(find.text('BI 3004/60, 60132 1/2 V29'), findsOneWidget);
+      expect(find.text('BI 3004/60, 60132 2/2 V29'), findsOneWidget);
+      expect(find.text('Booklet 1 of 2'), findsOneWidget);
+      expect(find.text('Booklet 2 of 2'), findsOneWidget);
+    });
+
+    testWidgets('renders cleanly in dark theme matching app palette', (tester) async {
+      final set = LegoSet(
+        id: 'set-uuid',
+        userId: 'user-uuid',
+        setNum: '60132-1',
+        name: 'Service Station',
+        status: LegoSetStatus.currentlyBuilding,
+        createdAt: DateTime.now(),
+      );
+
+      final instructions = [
+        const LegoInstruction(
+          description: 'Booklet 1',
+          url: 'https://example.com/manual1.pdf',
+        ),
+      ];
+
+      const darkBg = Color(0xFF1A1C22);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: const ColorScheme.dark(
+              surfaceContainer: darkBg,
+            ),
+          ),
+          home: Scaffold(
+            body: InstructionsModal(
+              set: set,
+              instructions: instructions,
+            ),
+          ),
+        ),
+      );
+
+      final containerFinder = find.byWidgetPredicate(
+        (w) => w is Container && (w.decoration is BoxDecoration) && ((w.decoration as BoxDecoration).color == darkBg),
+      );
+      expect(containerFinder, findsOneWidget);
+    });
+  });
+
+  group('ImageViewerDialog Widget Tests', () {
+    testWidgets('renders ImageViewerDialog with title and interactive viewer', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ImageViewerDialog(
+              imageUrl: 'https://example.com/piece.png',
+              title: 'Brick 2x4 - Red',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Brick 2x4 - Red'), findsOneWidget);
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.restart_alt_rounded), findsOneWidget);
+    });
+
+    testWidgets('close button dismisses ImageViewerDialog', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            DefaultMaterialLocalizations.delegate,
+            DefaultWidgetsLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => openImageViewer(
+                context,
+                imageUrl: 'https://example.com/set.png',
+                title: 'Set 75192',
+              ),
+              child: const Text('Open Viewer'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Viewer'));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Set 75192'), findsOneWidget);
+      expect(find.byType(ImageViewerDialog), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.byType(ImageViewerDialog), findsNothing);
+    });
+  });
+
+  group('DetailsPage Filter Segments Tests', () {
+    testWidgets('5-segment filter renders all segments and selects lost', (tester) async {
+      String selected = 'all';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return Center(
+                  child: SizedBox(
+                    width: 400,
+                    child: M3ESegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        M3ESegment(value: 'all', label: 'All (10)'),
+                        M3ESegment(value: 'missing', label: 'Missing (4)'),
+                        M3ESegment(value: 'found', label: 'Found (6)'),
+                        M3ESegment(value: 'spares', label: 'Spares (2)'),
+                        M3ESegment(value: 'lost', label: 'Lost (1)'),
+                      ],
+                      selected: {selected},
+                      onSelectionChanged: (val) {
+                        if (val.isNotEmpty) {
+                          setState(() {
+                            selected = val.first;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('All (10)'), findsOneWidget);
+      expect(find.text('Missing (4)'), findsOneWidget);
+      expect(find.text('Found (6)'), findsOneWidget);
+      expect(find.text('Spares (2)'), findsOneWidget);
+      expect(find.text('Lost (1)'), findsOneWidget);
+
+      await tester.tap(find.text('Lost (1)'));
+      await tester.pump();
+      expect(selected, 'lost');
     });
   });
 }
