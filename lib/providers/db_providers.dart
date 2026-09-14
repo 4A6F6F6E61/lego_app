@@ -107,15 +107,34 @@ Future<void> updatePartQuantityFound(int partId, int quantityFound) async {
 
 @riverpod
 Future<void> setAllPartsToFound(Ref ref, String setId) async {
-  final parts = await ref.read(setPartsProvider(setId).future);
-  for (final part in parts) {
-    await supabase
-        .from('set_parts')
-        .update({'quantity_found': part.quantityNeeded})
-        .eq('id', part.id);
+  final response = await supabase.functions.invoke(
+    'set-all-parts-found',
+    body: {
+      'setId': setId,
+      'found': true,
+    },
+  );
+
+  if (response.status != 200) {
+    final errorData = response.data;
+    final errorMessage = errorData is Map ? errorData['error'] ?? errorData['message'] : null;
+    throw errorMessage ?? 'Failed to mark all parts as found (status ${response.status})';
   }
 }
 
 Future<void> setAllPartsToNotFound(String setId) async {
-  await supabase.from('set_parts').update({'quantity_found': 0}).eq('set_id', setId);
+  final response = await supabase.functions.invoke(
+    'set-all-parts-found',
+    body: {
+      'setId': setId,
+      'found': false,
+    },
+  );
+
+  if (response.status != 200) {
+    final errorData = response.data;
+    final errorMessage = errorData is Map ? errorData['error'] ?? errorData['message'] : null;
+    throw errorMessage ?? 'Failed to reset parts (status ${response.status})';
+  }
 }
+
