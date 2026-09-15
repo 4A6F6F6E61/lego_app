@@ -28,6 +28,34 @@ class SetPart {
     required this.isLost,
   });
 
+  SetPart copyWith({
+    int? id,
+    String? setId,
+    String? userId,
+    String? partNum,
+    int? colorId,
+    String? name,
+    String? imgUrl,
+    int? quantityNeeded,
+    int? quantityFound,
+    bool? isSpare,
+    bool? isLost,
+  }) {
+    return SetPart(
+      id: id ?? this.id,
+      setId: setId ?? this.setId,
+      userId: userId ?? this.userId,
+      partNum: partNum ?? this.partNum,
+      colorId: colorId ?? this.colorId,
+      name: name ?? this.name,
+      imgUrl: imgUrl ?? this.imgUrl,
+      quantityNeeded: quantityNeeded ?? this.quantityNeeded,
+      quantityFound: quantityFound ?? this.quantityFound,
+      isSpare: isSpare ?? this.isSpare,
+      isLost: isLost ?? this.isLost,
+    );
+  }
+
   factory SetPart.fromJson(Map<String, dynamic> json) {
     return SetPart(
       id: json['id'] as int,

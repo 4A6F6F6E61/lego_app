@@ -24,7 +24,7 @@ class OptionsModal extends HookConsumerWidget {
         builder: (_) => const ConfirmActionDialog(
           title: 'Set All as Completed',
           content:
-              'Are you sure you want to mark all parts in this set as found? This action cannot be undone.',
+              'Are you sure you want to mark all parts in this set as found? Lost parts will remain unchanged.',
           confirmLabel: 'Mark All Found',
         ),
       );
@@ -33,7 +33,7 @@ class OptionsModal extends HookConsumerWidget {
 
       try {
         loading.value = true;
-        await ref.read(setAllPartsToFoundProvider(setId).future);
+        await ref.read(setPartsNotifierProvider(setId).notifier).markAllFound();
         if (context.mounted) Navigator.of(context).pop();
       } finally {
         loading.value = false;
@@ -146,7 +146,7 @@ class OptionsModal extends HookConsumerWidget {
                             ),
                           ),
                           Text(
-                            'Sets quantity found to 100% for all pieces',
+                            'Sets quantity found to 100% (excluding lost)',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.outline,
                             ),

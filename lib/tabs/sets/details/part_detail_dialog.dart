@@ -258,7 +258,9 @@ class PartDetailDialog extends HookConsumerWidget {
                           value: isSpareState.value,
                           onChanged: (val) {
                             isSpareState.value = val;
-                            flagPartAsSpare(part.id, val);
+                            ref
+                                .read(setPartsNotifierProvider(part.setId).notifier)
+                                .toggleSpare(part.id, val);
                           },
                         ),
                       ],
@@ -275,7 +277,9 @@ class PartDetailDialog extends HookConsumerWidget {
                           value: isLostState.value,
                           onChanged: (val) {
                             isLostState.value = val;
-                            flagPartAsLost(part.id, val);
+                            ref
+                                .read(setPartsNotifierProvider(part.setId).notifier)
+                                .toggleLost(part.id, val);
                           },
                         ),
                       ],
@@ -291,7 +295,9 @@ class PartDetailDialog extends HookConsumerWidget {
                 children: [
                   M3EButton.outlined(
                     onPressed: () {
-                      updatePartQuantityFound(part.id, part.quantityNeeded);
+                      ref
+                          .read(setPartsNotifierProvider(part.setId).notifier)
+                          .updateQuantity(part.id, part.quantityNeeded);
                       context.pop();
                     },
                     child: const Text('Found All'),

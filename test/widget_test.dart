@@ -6,6 +6,7 @@ import 'package:lego_app/components/image_viewer.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
+import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
 import 'package:lego_app/tabs/sets/details/instructions_modal.dart';
 import 'package:lego_app/util.dart';
@@ -872,6 +873,117 @@ void main() {
       expect(selected, 'lost');
     });
   });
+
+  group('Optimistic SetParts Updates & copyWith Tests', () {
+    test('SetPart copyWith correctly updates attributes immutably', () {
+      final original = SetPart(
+        id: 42,
+        setId: '75192-1',
+        userId: 'user-abc',
+        partNum: '3001',
+        colorId: 1,
+        quantityNeeded: 10,
+        quantityFound: 2,
+        isSpare: false,
+        isLost: false,
+      );
+
+      final updated = original.copyWith(
+        quantityFound: 5,
+        isSpare: true,
+        isLost: true,
+      );
+
+      expect(original.quantityFound, 2);
+      expect(original.isSpare, isFalse);
+      expect(original.isLost, isFalse);
+
+      expect(updated.id, 42);
+      expect(updated.setId, '75192-1');
+      expect(updated.partNum, '3001');
+      expect(updated.quantityFound, 5);
+      expect(updated.isSpare, isTrue);
+      expect(updated.isLost, isTrue);
+    });
+
+    test('SetPartsNotifier optimistic updateQuantity, increment, and decrement modify local state instantly', () async {
+      final initialParts = [
+        SetPart(
+          id: 101,
+          setId: 'set-test',
+          userId: 'user-1',
+          partNum: '3001',
+          colorId: 1,
+          quantityNeeded: 5,
+          quantityFound: 2,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 102,
+          setId: 'set-test',
+          userId: 'user-1',
+          partNum: '3002',
+          colorId: 2,
+          quantityNeeded: 3,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+      ];
+
+      final container = ProviderContainer(
+        overrides: [
+          setPartsNotifierProvider('set-test').overrideWith(
+            () => MockSetPartsNotifier(initialParts),
+          ),
+        ],
+      );
+
+      // Await initial build
+      final parts = await container.read(setPartsNotifierProvider('set-test').future);
+      expect(parts.length, 2);
+      expect(parts[0].quantityFound, 2);
+
+      final notifier = container.read(setPartsNotifierProvider('set-test').notifier);
+
+      // Optimistic increment
+      notifier.incrementQuantity(101);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![0].quantityFound, 3);
+
+      // Optimistic decrement
+      notifier.decrementQuantity(101);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![0].quantityFound, 2);
+
+      // Decrement at 0 does not go negative
+      notifier.decrementQuantity(102);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![1].quantityFound, 0);
+
+      // Direct updateQuantity
+      notifier.updateQuantity(101, 5);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![0].quantityFound, 5);
+
+      // Optimistic toggleSpare
+      await notifier.toggleSpare(101, true);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![0].isSpare, isTrue);
+
+      // Optimistic toggleLost
+      await notifier.toggleLost(102, true);
+      expect(container.read(setPartsNotifierProvider('set-test')).value![1].isLost, isTrue);
+
+      container.dispose();
+    });
+  });
+}
+
+class MockSetPartsNotifier extends SetPartsNotifier {
+  final List<SetPart> initialParts;
+  MockSetPartsNotifier(this.initialParts);
+
+  @override
+  Future<List<SetPart>> build(String setId) async {
+    return List<SetPart>.of(initialParts);
+  }
 }
 
 class MockApiKeyNotifier extends RebrickableApiKey {

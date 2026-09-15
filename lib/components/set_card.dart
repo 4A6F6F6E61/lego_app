@@ -14,7 +14,7 @@ class SetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final partsAsync = ref.watch(setPartsStreamProvider(set.id));
+    final partsAsync = ref.watch(setPartsNotifierProvider(set.id));
 
     final (statusLabel, statusColor, statusIcon) = switch (set.status) {
       LegoSetStatus.built => ('Built', const Color(0xFF10B981), Icons.check_circle_rounded),

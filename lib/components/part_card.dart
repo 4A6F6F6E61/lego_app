@@ -46,9 +46,11 @@ class PartCard extends HookConsumerWidget {
     final inputController = useTextEditingController(text: part.quantityFound.toString());
     final focusNode = useFocusNode();
 
-    Future<void> updateQuantity(int quantity) {
-      if (quantity < 0) return Future.value();
-      return updatePartQuantityFound(part.id, quantity);
+    void updateQuantity(int quantity) {
+      if (quantity < 0) return;
+      ref
+          .read(setPartsNotifierProvider(part.setId).notifier)
+          .updateQuantity(part.id, quantity);
     }
 
     useEffect(() {
@@ -77,18 +79,18 @@ class PartCard extends HookConsumerWidget {
       return () => focusNode.removeListener(handleFocusChange);
     });
 
-    Future<void> increaseQuantity() async {
+    void increaseQuantity() {
       if (part.isFinished) return;
-      final next = part.quantityFound + 1;
-      inputController.text = next.toString();
-      await updateQuantity(next);
+      ref
+          .read(setPartsNotifierProvider(part.setId).notifier)
+          .incrementQuantity(part.id);
     }
 
-    Future<void> decreaseQuantity() async {
+    void decreaseQuantity() {
       if (part.quantityFound <= 0) return;
-      final prev = part.quantityFound - 1;
-      inputController.text = prev.toString();
-      await updateQuantity(prev);
+      ref
+          .read(setPartsNotifierProvider(part.setId).notifier)
+          .decrementQuantity(part.id);
     }
 
     Color? legoColor;
@@ -267,16 +269,16 @@ class PartCard extends HookConsumerWidget {
                   onTap: () {
                     if (inputController.text == '0') inputController.text = '';
                   },
-                  onChanged: (value) async {
+                  onChanged: (value) {
                     final raw = value.trim();
                     if (raw.isNotEmpty) {
                       final q = int.tryParse(raw);
-                      if (q != null) await updateQuantity(q);
+                      if (q != null) updateQuantity(q);
                     }
                   },
-                  onFieldSubmitted: (value) async {
+                  onFieldSubmitted: (value) {
                     final q = int.tryParse(value.trim());
-                    if (q != null) await updateQuantity(q);
+                    if (q != null) updateQuantity(q);
                   },
                 ),
               ),

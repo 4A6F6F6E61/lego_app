@@ -24,7 +24,7 @@ class DetailsPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setAsync = ref.watch(setStreamProvider(setId));
-    final partsAsync = ref.watch(setPartsStreamProvider(setId));
+    final partsAsync = ref.watch(setPartsNotifierProvider(setId));
     final sortOption = ref.watch(partSortProvider);
     final theme = Theme.of(context);
 
