@@ -1,20 +1,24 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/api.dart';
 import 'package:lego_app/api/services/brickset_api.dart';
 import 'package:lego_app/components/image_viewer.dart';
+import 'package:lego_app/components/instruction_download_dialog.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
+import 'package:lego_app/services/instruction_pdf_service.dart';
 import 'package:lego_app/tabs/sets/details/instructions_modal.dart';
 import 'package:lego_app/tabs/sets/details/options_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 
 class DetailsPage extends HookConsumerWidget {
   const DetailsPage({super.key, required this.setId});
@@ -647,12 +651,40 @@ class DetailsPage extends HookConsumerWidget {
       }
 
       if (instructions.length == 1) {
-        final launched = await launchUrl(
-          Uri.parse(instructions.first.url),
-          mode: LaunchMode.externalApplication,
-        );
-        if (!launched && context.mounted) {
-          showSnack(context, 'Unable to open instructions');
+        final instruction = instructions.first;
+        final isDownloaded = await instructionPdfService.isInstructionDownloaded(set.setNum, instruction);
+        File? file;
+        if (isDownloaded) {
+          file = await instructionPdfService.getLocalInstructionFile(set.setNum, instruction);
+        } else {
+          if (!context.mounted) return;
+          file = await showDialog<File?>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => InstructionDownloadDialog(
+              set: set,
+              instruction: instruction,
+            ),
+          );
+        }
+
+        if (file != null && context.mounted) {
+          final result = await instructionPdfService.openPdfFile(file);
+          if (result.type != ResultType.done && context.mounted) {
+            if (result.type == ResultType.noAppToOpen) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('No PDF reader app found on device.'),
+                  action: SnackBarAction(
+                    label: 'Open in Browser',
+                    onPressed: () => instructionPdfService.fallbackOpenInBrowser(instruction),
+                  ),
+                ),
+              );
+            } else {
+              showSnack(context, 'Could not open PDF: ${result.message}');
+            }
+          }
         }
       } else {
         showModalBottomSheet(

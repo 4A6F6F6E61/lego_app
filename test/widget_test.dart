@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lego_app/api/services/brickset_api.dart';
 import 'package:lego_app/components/export_missing_parts_dialog.dart';
 import 'package:lego_app/components/image_viewer.dart';
+import 'package:http/http.dart' as http;
+import 'package:lego_app/components/instruction_download_dialog.dart';
 import 'package:lego_app/components/part_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
 import 'package:lego_app/db/models/set_part.dart';
 import 'package:lego_app/providers/db_providers.dart';
 import 'package:lego_app/providers/settings.dart';
+import 'package:lego_app/services/instruction_pdf_service.dart';
 import 'package:lego_app/tabs/sets/details/instructions_modal.dart';
 import 'package:lego_app/util.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -974,6 +979,169 @@ void main() {
       container.dispose();
     });
   });
+
+  group('InstructionPdfService and Native PDF Viewing Tests', () {
+    test('getInstructionFileName sanitizes special characters and appends url hash', () {
+      const instruction = LegoInstruction(
+        description: 'BI 3104, 120+4, 75192 1/2 - V29/V39',
+        url: 'https://www.lego.com/cdn/bi/6280459.pdf',
+      );
+
+      final fileName = instructionPdfService.getInstructionFileName('75192-1', instruction);
+
+      expect(fileName.endsWith('.pdf'), isTrue);
+      expect(fileName.contains('75192-1'), isTrue);
+      expect(fileName.contains('BI_3104_120_4_75192_1_2_V29_V39'), isTrue);
+      expect(fileName.contains('/'), isFalse);
+      expect(fileName.contains('\\'), isFalse);
+      expect(fileName.contains('+'), isFalse);
+    });
+
+    test('formatBytes formats bytes into human-readable strings', () {
+      expect(InstructionPdfService.formatBytes(0), '0 B');
+      expect(InstructionPdfService.formatBytes(500), '500.0 B');
+      expect(InstructionPdfService.formatBytes(1024), '1.0 KB');
+      expect(InstructionPdfService.formatBytes(1024 * 1024 * 5), '5.0 MB');
+      expect(InstructionPdfService.formatBytes(1024 * 1024 * 1024 * 2), '2.0 GB');
+    });
+
+    testWidgets('InstructionsModal renders booklet cards and handles dark theme cleanly', (tester) async {
+      final set = LegoSet(
+        id: 'test-set-id',
+        userId: 'test-user-id',
+        setNum: '75192-1',
+        name: 'Millennium Falcon',
+        status: LegoSetStatus.currentlyBuilding,
+        createdAt: DateTime.now(),
+      );
+
+      final instructions = [
+        const LegoInstruction(
+          description: 'Booklet 1 (Front Section)',
+          url: 'https://example.com/booklet1.pdf',
+        ),
+        const LegoInstruction(
+          description: 'Booklet 2 (Rear Section)',
+          url: 'https://example.com/booklet2.pdf',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(
+            body: InstructionsModal(
+              set: set,
+              instructions: instructions,
+            ),
+          ),
+        ),
+      );
+
+      // Verify header and booklet listings
+      expect(find.text('Building Instructions'), findsOneWidget);
+      expect(find.text('75192-1 • 2 booklets available'), findsOneWidget);
+      expect(find.text('Booklet 1 (Front Section)'), findsOneWidget);
+      expect(find.text('Booklet 2 (Rear Section)'), findsOneWidget);
+      expect(find.text('Booklet 1 of 2'), findsOneWidget);
+      expect(find.text('Booklet 2 of 2'), findsOneWidget);
+    });
+
+    testWidgets('InstructionDownloadDialog renders set number, booklet title, and cancel button', (tester) async {
+      final set = LegoSet(
+        id: 'test-set-id',
+        userId: 'test-user-id',
+        setNum: '10497-1',
+        name: 'Galaxy Explorer',
+        status: LegoSetStatus.currentlyBuilding,
+        createdAt: DateTime.now(),
+      );
+
+      const instruction = LegoInstruction(
+        description: 'Building Instructions - 10497',
+        url: 'https://example.com/galaxy_explorer.pdf',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: InstructionDownloadDialog(
+              set: set,
+              instruction: instruction,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Downloading Instructions'), findsOneWidget);
+      expect(find.text('10497-1'), findsOneWidget);
+      expect(find.text('Building Instructions - 10497'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+    });
+
+    test('downloadInstruction streams response to file, reports progress, and saves file', () async {
+      final tempDir = Directory.systemTemp.createTempSync('lego_instructions_test_');
+      addTearDown(() {
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      });
+
+      const instruction = LegoInstruction(
+        description: 'Test Manual',
+        url: 'https://example.com/test_manual.pdf',
+      );
+
+      final pdfBytes = List<int>.generate(100, (i) => i);
+      final client = MockHttpClient((request) async {
+        return http.StreamedResponse(
+          Stream.fromIterable([
+            pdfBytes.sublist(0, 50),
+            pdfBytes.sublist(50, 100),
+          ]),
+          200,
+          contentLength: 100,
+        );
+      });
+
+      final progressList = <double>[];
+      final file = await instructionPdfService.downloadInstruction(
+        setNum: '9999-1',
+        instruction: instruction,
+        client: client,
+        baseDir: tempDir,
+        onProgress: (p, received, total) {
+          progressList.add(p);
+        },
+      );
+
+      expect(file.existsSync(), isTrue);
+      expect(file.lengthSync(), 100);
+      expect(file.readAsBytesSync(), pdfBytes);
+      expect(progressList.isNotEmpty, isTrue);
+      expect(progressList.last, 1.0);
+
+      // Subsequent check should report downloaded
+      final isDownloaded = await instructionPdfService.isInstructionDownloaded(
+        '9999-1',
+        instruction,
+        baseDir: tempDir,
+      );
+      expect(isDownloaded, isTrue);
+    });
+  });
+}
+
+class MockHttpClient extends http.BaseClient {
+  final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
+  MockHttpClient(this.handler);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) => handler(request);
 }
 
 class MockSetPartsNotifier extends SetPartsNotifier {
