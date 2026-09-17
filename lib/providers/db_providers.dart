@@ -295,7 +295,7 @@ class SetPartsNotifier extends _$SetPartsNotifier {
     _flushAllTimers();
 
     final newList = currentList.map((part) {
-      if (part.isSpare) return part;
+      if (part.isSpare || part.isLost) return part;
       return part.copyWith(quantityFound: part.quantityNeeded);
     }).toList();
     state = AsyncData(newList);
