@@ -80,6 +80,77 @@ Future<List<SetPart>> fetchAllMissingParts() async {
   return response.map((json) => SetPart.fromJson(json)).toList();
 }
 
+class PartSetMatch {
+  final LegoSet set;
+  final List<SetPart> parts;
+
+  const PartSetMatch({
+    required this.set,
+    required this.parts,
+  });
+
+  int get totalQuantityNeeded =>
+      parts.fold(0, (sum, p) => sum + p.quantityNeeded);
+  int get totalQuantityFound =>
+      parts.fold(0, (sum, p) => sum + p.quantityFound);
+  bool get isFullyFound =>
+      totalQuantityNeeded > 0 && totalQuantityFound >= totalQuantityNeeded;
+}
+
+@riverpod
+Future<List<PartSetMatch>> matchingSetsForPart(Ref ref, String partNum) async {
+  if (auth.currentUser == null || partNum.trim().isEmpty) return [];
+
+  final cleaned = partNum.trim();
+
+  final partsResponse = await supabase
+      .from('set_parts')
+      .select()
+      .eq('user_id', auth.currentUser!.id)
+      .ilike('part_num', cleaned)
+      .order('color_id', ascending: true);
+
+  final parts = (partsResponse as List)
+      .map((json) => SetPart.fromJson(json as Map<String, dynamic>))
+      .toList();
+  if (parts.isEmpty) return [];
+
+  final partsBySetId = <String, List<SetPart>>{};
+  for (final part in parts) {
+    partsBySetId.putIfAbsent(part.setId, () => []).add(part);
+  }
+
+  final setIds = partsBySetId.keys.toList();
+  final setsResponse = await supabase
+      .from('sets')
+      .select()
+      .inFilter('id', setIds);
+
+  final sets = (setsResponse as List)
+      .map((json) => LegoSet.fromJson(json as Map<String, dynamic>))
+      .toList();
+
+  final matches = <PartSetMatch>[];
+  for (final legoSet in sets) {
+    final setParts = partsBySetId[legoSet.id] ?? [];
+    matches.add(PartSetMatch(set: legoSet, parts: setParts));
+  }
+
+  matches.sort((a, b) {
+    final statusOrder = {
+      LegoSetStatus.currentlyBuilding: 0,
+      LegoSetStatus.backlog: 1,
+      LegoSetStatus.built: 2,
+    };
+    final aOrder = statusOrder[a.set.status] ?? 99;
+    final bOrder = statusOrder[b.set.status] ?? 99;
+    if (aOrder != bOrder) return aOrder.compareTo(bOrder);
+    return a.set.name.compareTo(b.set.name);
+  });
+
+  return matches;
+}
+
 @riverpod
 Stream<LegoSet?> setStream(Ref ref, String setId) {
   if (auth.currentUser == null) return Stream.value(null);

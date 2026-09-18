@@ -34,6 +34,11 @@ class _NavigationPageState extends ConsumerState<NavigationPage> {
       label: 'Sets',
     ),
     _NavDestinationItem(
+      icon: Icons.center_focus_strong_outlined,
+      selectedIcon: Icons.center_focus_strong_rounded,
+      label: 'Scan & Identify',
+    ),
+    _NavDestinationItem(
       icon: Icons.tune_outlined,
       selectedIcon: Icons.tune_rounded,
       label: 'Settings',

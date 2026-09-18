@@ -1,4 +1,5 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lego_app/components/set_card.dart';
 import 'package:lego_app/db/models/lego_set.dart';
@@ -21,6 +22,13 @@ class SetsPage extends HookConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('LEGO Sets'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.center_focus_strong_outlined),
+            tooltip: 'Scan & Identify Piece',
+            onPressed: () => context.go('/scanner'),
+          ),
+        ],
       ),
       body: setsAsync.when(
         data: (sets) {

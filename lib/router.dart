@@ -3,6 +3,7 @@ import 'package:lego_app/auth_notifier.dart';
 import 'package:lego_app/auth_page.dart';
 import 'package:lego_app/navigation_page.dart';
 import 'package:lego_app/tabs/dashboard/dashboard_page.dart';
+import 'package:lego_app/tabs/scanner/scanner_page.dart';
 import 'package:lego_app/tabs/sets/details/details_page.dart';
 import 'package:lego_app/tabs/sets/sets_page.dart';
 import 'package:lego_app/tabs/settings/settings_page.dart';
@@ -61,6 +62,16 @@ final router = GoRouter(
                   },
                 ),
               ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: "/scanner",
+              builder: (_, _) {
+                return const ScannerPage();
+              },
             ),
           ],
         ),

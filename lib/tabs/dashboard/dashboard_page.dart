@@ -167,6 +167,54 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
+                  final scanPieceCard = M3ECard(
+                    variant: M3ECardVariant.filled,
+                    color: theme.colorScheme.surfaceContainer,
+                    border: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
+                    onPressed: () => context.go('/scanner'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0266C8).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.center_focus_strong_rounded,
+                              color: Color(0xFF0266C8),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Scan Piece',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Brickognize AI recognition',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
                   final syncCard = M3ECard(
                     variant: M3ECardVariant.filled,
                     color: theme.colorScheme.surfaceContainer,
@@ -316,12 +364,14 @@ class DashboardPage extends ConsumerWidget {
                     ),
                   );
 
-                  final isNarrow = constraints.maxWidth < 750;
+                  final width = constraints.maxWidth;
 
-                  if (isNarrow) {
+                  if (width < 650) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        scanPieceCard,
+                        const SizedBox(height: 12),
                         syncCard,
                         const SizedBox(height: 12),
                         browseCard,
@@ -331,8 +381,32 @@ class DashboardPage extends ConsumerWidget {
                     );
                   }
 
+                  if (width < 1050) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: scanPieceCard),
+                            const SizedBox(width: 12),
+                            Expanded(child: syncCard),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(child: browseCard),
+                            const SizedBox(width: 12),
+                            Expanded(child: orderMissingCard),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+
                   return Row(
                     children: [
+                      Expanded(child: scanPieceCard),
+                      const SizedBox(width: 12),
                       Expanded(child: syncCard),
                       const SizedBox(width: 12),
                       Expanded(child: browseCard),
