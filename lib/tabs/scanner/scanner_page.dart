@@ -16,6 +16,34 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+bool isColorMatch(
+  int partColorId,
+  BrickognizeColor? predictedColor,
+  Map<int, dynamic> colorsMap,
+) {
+  if (predictedColor == null) return false;
+  final target = predictedColor.name
+      .toLowerCase()
+      .replaceAll('-', ' ')
+      .replaceAll('_', ' ')
+      .trim();
+  if (target.isNotEmpty) {
+    final colorInfo = colorsMap[partColorId];
+    if (colorInfo != null) {
+      final partName = (colorInfo.name as String?)
+          ?.toLowerCase()
+          .replaceAll('-', ' ')
+          .replaceAll('_', ' ')
+          .trim();
+      if (partName != null && partName == target) {
+        return true;
+      }
+    }
+  }
+  if (predictedColor.id == partColorId.toString()) return true;
+  return false;
+}
+
 class ScannerPage extends HookConsumerWidget {
   const ScannerPage({super.key});
 
@@ -238,7 +266,7 @@ class ScannerPage extends HookConsumerWidget {
               ),
             ),
           ] else ...[
-            // Photo Preview Bar
+            // Photo Preview Bar (Filename removed per requirement)
             M3ECard(
               variant: M3ECardVariant.filled,
               color: theme.colorScheme.surfaceContainer,
@@ -264,18 +292,16 @@ class ScannerPage extends HookConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            imageName.value ?? 'Captured Image',
+                            'Scanned Image',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             isScanning.value
                                 ? 'Analyzing with Brickognize AI...'
-                                : 'Image scanned successfully',
+                                : 'Photo ready',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: isScanning.value
                                   ? theme.colorScheme.primary
@@ -478,10 +504,11 @@ class ScannerPage extends HookConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Sets in DB Matching This Piece
+            // Sets in DB Matching This Piece (Prioritizing matching color)
             _MatchingSetsSection(
               partNum: currentItem.id,
               partName: currentItem.name,
+              detectedColor: detectedColor,
               colorsMap: colorsAsync.value ?? {},
             ),
           ],
@@ -678,34 +705,63 @@ class _CandidateDetailCard extends StatelessWidget {
               ),
             ],
 
-            // BrickLink external links if available
-            if (item.externalSites.isNotEmpty) ...[
-              const Divider(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  for (final site in item.externalSites)
-                    M3EButton.text(
-                      onPressed: () {
-                        if (site.url.isNotEmpty) {
-                          launchUrl(
-                            Uri.parse(site.url),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.open_in_new_rounded, size: 14),
-                          const SizedBox(width: 6),
-                          Text('View on ${site.name}'),
-                        ],
-                      ),
+            // BrickLink external links with matching color parameter (#C={colorId})
+            Builder(
+              builder: (context) {
+                final sites = List<BrickognizeExternalSite>.of(item.externalSites);
+                if (!sites.any((s) => s.name.toLowerCase().contains('bricklink'))) {
+                  sites.insert(
+                    0,
+                    BrickognizeExternalSite(
+                      name: 'bricklink',
+                      url: 'https://www.bricklink.com/v2/catalog/catalogitem.page?P=${item.id}',
                     ),
-                ],
-              ),
-            ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    const Divider(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        for (final site in sites)
+                          M3EButton.text(
+                            onPressed: () {
+                              var targetUrl = site.url;
+                              if (targetUrl.isNotEmpty) {
+                                if (site.name.toLowerCase().contains('bricklink') &&
+                                    detectedColor != null &&
+                                    detectedColor!.id.isNotEmpty) {
+                                  final base = targetUrl.split('#').first;
+                                  targetUrl = '$base#C=${detectedColor!.id}';
+                                }
+                                launchUrl(
+                                  Uri.parse(targetUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.open_in_new_rounded, size: 14),
+                                const SizedBox(width: 6),
+                                Text(
+                                  site.name.toLowerCase().contains('bricklink') &&
+                                          detectedColor != null
+                                      ? 'View on BrickLink (${detectedColor!.name})'
+                                      : 'View on ${site.name}',
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -716,11 +772,13 @@ class _CandidateDetailCard extends StatelessWidget {
 class _MatchingSetsSection extends ConsumerWidget {
   final String partNum;
   final String partName;
+  final BrickognizeColor? detectedColor;
   final Map<int, dynamic> colorsMap;
 
   const _MatchingSetsSection({
     required this.partNum,
     required this.partName,
+    this.detectedColor,
     required this.colorsMap,
   });
 
@@ -802,30 +860,84 @@ class _MatchingSetsSection extends ConsumerWidget {
               );
             }
 
+            // Sort sets so that sets containing the predicted color appear first!
+            final sortedMatches = List<PartSetMatch>.of(matches);
+            if (detectedColor != null) {
+              sortedMatches.sort((a, b) {
+                final aHasColor = a.parts
+                    .any((p) => isColorMatch(p.colorId, detectedColor, colorsMap));
+                final bHasColor = b.parts
+                    .any((p) => isColorMatch(p.colorId, detectedColor, colorsMap));
+                if (aHasColor && !bHasColor) return -1;
+                if (!aHasColor && bHasColor) return 1;
+
+                final statusOrder = {
+                  LegoSetStatus.currentlyBuilding: 0,
+                  LegoSetStatus.backlog: 1,
+                  LegoSetStatus.built: 2,
+                };
+                final aStatus = statusOrder[a.set.status] ?? 99;
+                final bStatus = statusOrder[b.set.status] ?? 99;
+                if (aStatus != bStatus) return aStatus.compareTo(bStatus);
+
+                return a.set.name.compareTo(b.set.name);
+              });
+            }
+
+            final matchingColorCount = detectedColor != null
+                ? sortedMatches
+                    .where((m) => m.parts.any((p) =>
+                        isColorMatch(p.colorId, detectedColor, colorsMap)))
+                    .length
+                : 0;
+
             return Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Found in ${matches.length} ${matches.length == 1 ? 'set' : 'sets'} in your collection:',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                        fontWeight: FontWeight.w600,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Found in ${sortedMatches.length} ${sortedMatches.length == 1 ? 'set' : 'sets'}:',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      if (matchingColorCount > 0 && detectedColor != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF10B981).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$matchingColorCount with matching ${detectedColor!.name}',
+                            style: const TextStyle(
+                              color: Color(0xFF10B981),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: matches.length,
+                  itemCount: sortedMatches.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final match = matches[index];
+                    final match = sortedMatches[index];
                     return _MatchCard(
                       match: match,
+                      detectedColor: detectedColor,
                       colorsMap: colorsMap,
                     );
                   },
@@ -861,10 +973,12 @@ class _MatchingSetsSection extends ConsumerWidget {
 
 class _MatchCard extends ConsumerWidget {
   final PartSetMatch match;
+  final BrickognizeColor? detectedColor;
   final Map<int, dynamic> colorsMap;
 
   const _MatchCard({
     required this.match,
+    this.detectedColor,
     required this.colorsMap,
   });
 
@@ -882,12 +996,29 @@ class _MatchCard extends ConsumerWidget {
       LegoSetStatus.backlog => ('Backlog', const Color(0xFF3B82F6)),
     };
 
+    // Sort pieces inside the set so that the matching color variant is listed FIRST!
+    final sortedParts = List<SetPart>.of(match.parts);
+    if (detectedColor != null) {
+      sortedParts.sort((a, b) {
+        final aMatch = isColorMatch(a.colorId, detectedColor, colorsMap);
+        final bMatch = isColorMatch(b.colorId, detectedColor, colorsMap);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return a.colorId.compareTo(b.colorId);
+      });
+    }
+
+    final hasMatchingColor = detectedColor != null &&
+        match.parts.any((p) => isColorMatch(p.colorId, detectedColor, colorsMap));
+
     return M3ECard(
       variant: M3ECardVariant.filled,
       color: theme.colorScheme.surfaceContainer,
       border: BorderSide(
-        color: statusColor.withValues(alpha: 0.5),
-        width: 1.2,
+        color: hasMatchingColor
+            ? const Color(0xFF10B981).withValues(alpha: 0.8)
+            : statusColor.withValues(alpha: 0.5),
+        width: hasMatchingColor ? 1.8 : 1.2,
       ),
       child: Padding(
         padding: const EdgeInsets.all(14.0),
@@ -997,14 +1128,16 @@ class _MatchCard extends ConsumerWidget {
             ),
             const Divider(height: 18),
 
-            // Piece Variants Breakdown for this Set
-            for (final part in match.parts) ...[
+            // Piece Variants Breakdown for this Set (matching color first)
+            for (final part in sortedParts) ...[
               _PartVariantRow(
                 part: part,
+                isMatchingColor:
+                    isColorMatch(part.colorId, detectedColor, colorsMap),
                 colorsMap: colorsMap,
                 setId: set.id,
               ),
-              if (part != match.parts.last) const SizedBox(height: 8),
+              if (part != sortedParts.last) const SizedBox(height: 8),
             ],
           ],
         ),
@@ -1015,11 +1148,13 @@ class _MatchCard extends ConsumerWidget {
 
 class _PartVariantRow extends ConsumerWidget {
   final SetPart part;
+  final bool isMatchingColor;
   final Map<int, dynamic> colorsMap;
   final String setId;
 
   const _PartVariantRow({
     required this.part,
+    this.isMatchingColor = false,
     required this.colorsMap,
     required this.setId,
   });
@@ -1044,8 +1179,16 @@ class _PartVariantRow extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: isMatchingColor
+            ? const Color(0xFF10B981).withValues(alpha: 0.08)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
+        border: isMatchingColor
+            ? Border.all(
+                color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                width: 1.2,
+              )
+            : null,
       ),
       child: Row(
         children: [
@@ -1062,18 +1205,57 @@ class _PartVariantRow extends ConsumerWidget {
             ),
           const SizedBox(width: 8),
 
-          // Color Name
+          // Color Name & Match Badge
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  colorName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        colorName,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isMatchingColor) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFF10B981).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 11,
+                              color: Color(0xFF10B981),
+                            ),
+                            SizedBox(width: 3),
+                            Text(
+                              'Color Match',
+                              style: TextStyle(
+                                color: Color(0xFF10B981),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Row(
                   children: [

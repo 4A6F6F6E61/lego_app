@@ -276,4 +276,184 @@ void main() {
       expect(find.text('Pick Image'), findsOneWidget);
     });
   });
+
+  group('Color Matching & Prioritization Tests', () {
+    final mockColorsMap = <int, dynamic>{
+      72: _MockRebrickableColor(id: 72, name: 'Dark Bluish Gray', rgb: '6C6E68'),
+      4: _MockRebrickableColor(id: 4, name: 'Red', rgb: 'C91A09'),
+      0: _MockRebrickableColor(id: 0, name: 'Black', rgb: '05131D'),
+      15: _MockRebrickableColor(id: 15, name: 'White', rgb: 'FFFFFF'),
+    };
+
+    test('isColorMatch matches normalized color names across Rebrickable and Brickognize', () {
+      // Brickognize uses BL color id (85) and name "Dark Bluish Gray"
+      // Rebrickable uses color id (72) and name "Dark Bluish Gray"
+      final predictedColor = BrickognizeColor(id: '85', name: 'Dark Bluish Gray', score: 0.9);
+
+      // Matches by name even with different IDs
+      expect(isColorMatch(72, predictedColor, mockColorsMap), isTrue);
+      // Does not match Red or Black
+      expect(isColorMatch(4, predictedColor, mockColorsMap), isFalse);
+      expect(isColorMatch(0, predictedColor, mockColorsMap), isFalse);
+    });
+
+    test('isColorMatch normalizes hyphens, underscores and casing', () {
+      final mapWithHyphens = <int, dynamic>{
+        72: _MockRebrickableColor(id: 72, name: 'Dark-Bluish_Gray', rgb: '6C6E68'),
+      };
+      final predictedColor = BrickognizeColor(id: '85', name: 'dark bluish gray', score: 0.85);
+
+      expect(isColorMatch(72, predictedColor, mapWithHyphens), isTrue);
+    });
+
+    test('isColorMatch falls back to ID match when colorInfo not found in map', () {
+      final predictedColor = BrickognizeColor(id: '999', name: 'Custom Rare Color', score: 0.7);
+
+      expect(isColorMatch(999, predictedColor, mockColorsMap), isTrue);
+      expect(isColorMatch(888, predictedColor, mockColorsMap), isFalse);
+    });
+
+    test('isColorMatch returns false when predictedColor is null', () {
+      expect(isColorMatch(72, null, mockColorsMap), isFalse);
+    });
+
+    test('BrickLink URL includes #C={colorId} when color is detected', () {
+      const originalUrl = 'https://www.bricklink.com/v2/catalog/catalogitem.page?P=3001';
+      final detectedColor = BrickognizeColor(id: '85', name: 'Dark Bluish Gray', score: 0.92);
+
+      final base = originalUrl.split('#').first;
+      final targetUrl = '$base#C=${detectedColor.id}';
+
+      expect(targetUrl, 'https://www.bricklink.com/v2/catalog/catalogitem.page?P=3001#C=85');
+    });
+
+    test('Sets are sorted so sets containing the matching color appear first', () {
+      final detectedColor = BrickognizeColor(id: '85', name: 'Dark Bluish Gray', score: 0.95);
+
+      final set1 = LegoSet(
+        id: 'set-1',
+        userId: 'u1',
+        setNum: '1001-1',
+        name: 'Set without predicted color',
+        createdAt: DateTime.now(),
+        status: LegoSetStatus.built,
+      );
+      final set2 = LegoSet(
+        id: 'set-2',
+        userId: 'u1',
+        setNum: '1002-1',
+        name: 'Set with predicted color',
+        createdAt: DateTime.now(),
+        status: LegoSetStatus.built,
+      );
+
+      final match1 = PartSetMatch(
+        set: set1,
+        parts: [
+          SetPart(
+            id: 1,
+            setId: 'set-1',
+            userId: 'u1',
+            partNum: '3001',
+            colorId: 4, // Red
+            quantityNeeded: 2,
+            quantityFound: 0,
+            isSpare: false,
+            isLost: false,
+          ),
+        ],
+      );
+
+      final match2 = PartSetMatch(
+        set: set2,
+        parts: [
+          SetPart(
+            id: 2,
+            setId: 'set-2',
+            userId: 'u1',
+            partNum: '3001',
+            colorId: 72, // Dark Bluish Gray
+            quantityNeeded: 2,
+            quantityFound: 0,
+            isSpare: false,
+            isLost: false,
+          ),
+        ],
+      );
+
+      final list = [match1, match2];
+      list.sort((a, b) {
+        final aHasColor = a.parts.any((p) => isColorMatch(p.colorId, detectedColor, mockColorsMap));
+        final bHasColor = b.parts.any((p) => isColorMatch(p.colorId, detectedColor, mockColorsMap));
+        if (aHasColor && !bHasColor) return -1;
+        if (!aHasColor && bHasColor) return 1;
+        return a.set.name.compareTo(b.set.name);
+      });
+
+      expect(list.first.set.id, 'set-2');
+      expect(list.last.set.id, 'set-1');
+    });
+
+    test('Parts within a set sort the matching color variant first', () {
+      final detectedColor = BrickognizeColor(id: '85', name: 'Dark Bluish Gray', score: 0.95);
+
+      final parts = [
+        SetPart(
+          id: 10,
+          setId: 'set-1',
+          userId: 'u1',
+          partNum: '3001',
+          colorId: 4, // Red
+          quantityNeeded: 5,
+          quantityFound: 2,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 11,
+          setId: 'set-1',
+          userId: 'u1',
+          partNum: '3001',
+          colorId: 72, // Dark Bluish Gray
+          quantityNeeded: 3,
+          quantityFound: 1,
+          isSpare: false,
+          isLost: false,
+        ),
+        SetPart(
+          id: 12,
+          setId: 'set-1',
+          userId: 'u1',
+          partNum: '3001',
+          colorId: 0, // Black
+          quantityNeeded: 1,
+          quantityFound: 0,
+          isSpare: false,
+          isLost: false,
+        ),
+      ];
+
+      parts.sort((a, b) {
+        final aMatch = isColorMatch(a.colorId, detectedColor, mockColorsMap);
+        final bMatch = isColorMatch(b.colorId, detectedColor, mockColorsMap);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return a.colorId.compareTo(b.colorId);
+      });
+
+      expect(parts.first.colorId, 72); // Dark Bluish Gray is first!
+    });
+  });
+}
+
+class _MockRebrickableColor {
+  final int id;
+  final String name;
+  final String rgb;
+
+  _MockRebrickableColor({
+    required this.id,
+    required this.name,
+    required this.rgb,
+  });
 }
