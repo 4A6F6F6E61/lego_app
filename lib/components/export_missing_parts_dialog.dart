@@ -225,80 +225,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
       );
     }
 
-    // Success State
-    if (exportResult.value != null) {
-      final res = exportResult.value!;
-      final isLost = res.isLostParts;
-      return _dialogWrapper(
-        context: context,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  isLost ? 'Parts Added to Lost Parts!' : 'List Exported!',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              M3EIconButton(
-                variant: M3EIconButtonVariant.tonal,
-                icon: const Icon(Icons.close_rounded, size: 18),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isLost
-                ? 'Successfully added ${res.totalQuantity} missing pieces (${res.uniquePartsCount} unique parts) to your Rebrickable "My Lost Parts" list.'
-                : 'Successfully created Rebrickable Part List "${res.listName}" with ${res.totalQuantity} total pieces (${res.uniquePartsCount} unique parts).',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isLost
-                ? 'You can now view your Lost Parts on Rebrickable and order replacements via BrickLink or BrickOwl.'
-                : 'You can now view this list on Rebrickable to directly order parts from BrickLink or BrickOwl.',
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
-          ),
-          const SizedBox(height: 24),
-          Wrap(
-            alignment: WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              M3EButton.outlined(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-              M3EButton.filled(
-                onPressed: () async {
-                  await launchUrl(Uri.parse(res.webUrl), mode: LaunchMode.externalApplication);
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.open_in_new_rounded, size: 16),
-                    const SizedBox(width: 6),
-                    Text(isLost ? 'Open My Lost Parts' : 'Open on Rebrickable'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
+
 
     final totalQuantity = missingParts.fold<int>(0, (sum, p) {
       final diff = p.quantityNeeded - p.quantityFound;
@@ -372,9 +299,9 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+              border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
@@ -440,7 +367,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                         Text(
                           'Your Rebrickable "My Lost Parts" list currently has ${lostPartsSnapshot.data} item(s). Exporting will append these $totalQuantity missing pieces to your existing list, which might result in duplicates.',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface,
+                            color: const Color(0xFFF59E0B),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -461,7 +388,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                               child: Text(
                                 'Clear list before exporting',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface,
+                                  color: const Color(0xFFF59E0B),
                                 ),
                               ),
                             ),
@@ -489,7 +416,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                     child: Text(
                       'Your Rebrickable "My Lost Parts" list is currently empty. These $totalQuantity missing pieces will be added to it.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface,
+                        color: const Color(0xFF10B981),
                       ),
                     ),
                   ),
@@ -501,9 +428,9 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+              border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
@@ -563,44 +490,54 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                   ? () {}
                   : () async {
                       if (isLostDestination) {
-                        isExporting.value = true;
-                        errorMessage.value = null;
-
-                        try {
-                          final res = await exportToLostParts(
-                            apiKey: apiKey,
-                            userToken: userToken,
-                            missingParts: missingParts,
-                            clearExisting: clearExistingList.value,
+                        final clear = clearExistingList.value;
+                        final rootContext = Navigator.of(context, rootNavigator: true).context;
+                        Navigator.of(context).pop();
+                        showSnack(rootContext, 'Exporting to Rebrickable in background...');
+                        
+                        exportToLostParts(
+                          apiKey: apiKey,
+                          userToken: userToken,
+                          missingParts: missingParts,
+                          clearExisting: clear,
+                        ).then((res) {
+                          if (!rootContext.mounted) return;
+                          showModalBottomSheet(
+                            context: rootContext,
+                            isScrollControlled: true,
+                            builder: (ctx) => _ExportSuccessSheet(res: res),
                           );
-                          exportResult.value = res;
-                        } catch (e) {
-                          errorMessage.value = 'Export failed: $e';
-                        } finally {
-                          isExporting.value = false;
-                        }
+                        }).catchError((e) {
+                          if (!rootContext.mounted) return;
+                          showSnack(rootContext, 'Export failed: $e');
+                        });
                       } else {
                         final listName = nameController.text.trim();
                         if (listName.isEmpty) {
                           errorMessage.value = 'Please provide a list name.';
                           return;
                         }
-                        isExporting.value = true;
-                        errorMessage.value = null;
-
-                        try {
-                          final res = await exportMissingPartsToRebrickable(
-                            apiKey: apiKey,
-                            userToken: userToken,
-                            listName: listName,
-                            missingParts: missingParts,
+                        
+                        final rootContext = Navigator.of(context, rootNavigator: true).context;
+                        Navigator.of(context).pop();
+                        showSnack(rootContext, 'Exporting to Rebrickable in background...');
+                        
+                        exportMissingPartsToRebrickable(
+                          apiKey: apiKey,
+                          userToken: userToken,
+                          listName: listName,
+                          missingParts: missingParts,
+                        ).then((res) {
+                          if (!rootContext.mounted) return;
+                          showModalBottomSheet(
+                            context: rootContext,
+                            isScrollControlled: true,
+                            builder: (ctx) => _ExportSuccessSheet(res: res),
                           );
-                          exportResult.value = res;
-                        } catch (e) {
-                          errorMessage.value = 'Export failed: $e';
-                        } finally {
-                          isExporting.value = false;
-                        }
+                        }).catchError((e) {
+                          if (!rootContext.mounted) return;
+                          showSnack(rootContext, 'Export failed: $e');
+                        });
                       }
                     },
               child: Row(
@@ -617,6 +554,94 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _ExportSuccessSheet extends StatelessWidget {
+  final MissingPartsExportResult res;
+
+  const _ExportSuccessSheet({required this.res});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isLost = res.isLostParts;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isLost ? 'Parts Added to Lost Parts!' : 'List Exported!',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                M3EIconButton(
+                  variant: M3EIconButtonVariant.tonal,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isLost
+                  ? 'Successfully added ${res.totalQuantity} missing pieces (${res.uniquePartsCount} unique parts) to your Rebrickable "My Lost Parts" list.'
+                  : 'Successfully created Rebrickable Part List "${res.listName}" with ${res.totalQuantity} total pieces (${res.uniquePartsCount} unique parts).',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isLost
+                  ? 'You can now view your Lost Parts on Rebrickable and order replacements via BrickLink or BrickOwl.'
+                  : 'You can now view this list on Rebrickable to directly order parts from BrickLink or BrickOwl.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                M3EButton.outlined(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+                M3EButton.filled(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await launchUrl(Uri.parse(res.webUrl), mode: LaunchMode.externalApplication);
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.open_in_new_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text(isLost ? 'Open My Lost Parts' : 'Open on Rebrickable'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

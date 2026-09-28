@@ -52,6 +52,20 @@ String _formEncode(Map m) => m.entries
     )
     .join('&');
 
+Future<http.Response> _sendWithRetry(Future<http.Response> Function() requestFn) async {
+  int attempts = 0;
+  while (true) {
+    attempts++;
+    final resp = await requestFn();
+    if (resp.statusCode == 429 && attempts <= 4) {
+      // Rebrickable might throttle heavily if multiple delete requests hit quickly.
+      await Future.delayed(Duration(seconds: 1 + attempts));
+      continue;
+    }
+    return resp;
+  }
+}
+
 Future<dynamic> apiGet(
   String basePath,
   String path, {
@@ -60,7 +74,7 @@ Future<dynamic> apiGet(
   Map<String, String>? headers,
 }) async {
   final uri = _buildUri(basePath, path, queryParameters);
-  final resp = await _httpClient.get(uri, headers: _defaultHeaders(authHeaderKey, headers));
+  final resp = await _sendWithRetry(() => _httpClient.get(uri, headers: _defaultHeaders(authHeaderKey, headers)));
   return _decodeResponse(resp);
 }
 
@@ -85,7 +99,7 @@ Future<dynamic> apiPost(
       payload = json.encode(body);
     }
   }
-  final resp = await _httpClient.post(uri, headers: h, body: payload);
+  final resp = await _sendWithRetry(() => _httpClient.post(uri, headers: h, body: payload));
   return _decodeResponse(resp);
 }
 
@@ -110,7 +124,7 @@ Future<dynamic> apiPut(
       payload = json.encode(body);
     }
   }
-  final resp = await _httpClient.put(uri, headers: h, body: payload);
+  final resp = await _sendWithRetry(() => _httpClient.put(uri, headers: h, body: payload));
   return _decodeResponse(resp);
 }
 
@@ -122,7 +136,7 @@ Future<dynamic> apiDelete(
   Map<String, String>? headers,
 }) async {
   final uri = _buildUri(basePath, path, queryParameters);
-  final resp = await _httpClient.delete(uri, headers: _defaultHeaders(authHeaderKey, headers));
+  final resp = await _sendWithRetry(() => _httpClient.delete(uri, headers: _defaultHeaders(authHeaderKey, headers)));
   return _decodeResponse(resp);
 }
 
