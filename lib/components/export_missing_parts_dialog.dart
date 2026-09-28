@@ -49,6 +49,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
     final exportResult = useState<MissingPartsExportResult?>(null);
     final errorMessage = useState<String?>(null);
     final selectedDestination = useState<String>('lost_parts');
+    final clearExistingList = useState<bool>(false);
 
     final partsFuture = useMemoized(() async {
       if (initialParts != null) return initialParts!;
@@ -437,10 +438,34 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Your Rebrickable "My Lost Parts" list currently has ${lostPartsSnapshot.data} item(s). Exporting will append these $totalQuantity missing pieces to your existing list.',
+                          'Your Rebrickable "My Lost Parts" list currently has ${lostPartsSnapshot.data} item(s). Exporting will append these $totalQuantity missing pieces to your existing list, which might result in duplicates.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: clearExistingList.value,
+                                onChanged: (val) {
+                                  if (val != null) clearExistingList.value = val;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Clear list before exporting',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -546,6 +571,7 @@ class ExportMissingPartsDialog extends HookConsumerWidget {
                             apiKey: apiKey,
                             userToken: userToken,
                             missingParts: missingParts,
+                            clearExisting: clearExistingList.value,
                           );
                           exportResult.value = res;
                         } catch (e) {

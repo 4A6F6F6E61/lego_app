@@ -210,9 +210,36 @@ Future<MissingPartsExportResult> exportToLostParts({
   required String apiKey,
   required String userToken,
   required List<SetPart> missingParts,
+  bool clearExisting = false,
 }) async {
   if (missingParts.isEmpty) {
     throw 'No missing parts to export.';
+  }
+
+  if (clearExisting) {
+    bool hasMore = true;
+    int page = 1;
+    while (hasMore) {
+      final res = await userApi.getLostParts(apiKey: apiKey, userToken: userToken, page: page, pageSize: 100);
+      final results = res['results'] as List<dynamic>? ?? [];
+      if (results.isEmpty) {
+        hasMore = false;
+        break;
+      }
+      for (final item in results) {
+        final id = item['id'] ?? item['lost_part_id'];
+        if (id != null) {
+          await userApi.deleteLostPart(apiKey: apiKey, userToken: userToken, id: id as int);
+        }
+      }
+      if (res['next'] == null) {
+        hasMore = false;
+      } else {
+        // If we delete the first page, the next page might shift, so we don't increment page.
+        // But wait, if we delete them, they disappear, so querying page 1 again will give the new items.
+        // So we keep fetching page 1 until it's empty.
+      }
+    }
   }
 
   // 1. Group and aggregate quantities for parts with the same inventory part id

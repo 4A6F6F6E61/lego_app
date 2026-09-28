@@ -140,4 +140,17 @@ class UsersApi {
       form: false,
     );
   }
+
+  Future<dynamic> deleteLostPart({
+    required String apiKey,
+    required String userToken,
+    required int id,
+  }) async {
+    dev.log("Deleting lost part $id for user $userToken");
+    return apiDelete(
+      rebrickableApiPath,
+      '/users/$userToken/lost_parts/$id/',
+      authHeaderKey: apiKey,
+    );
+  }
 }

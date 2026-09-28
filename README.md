@@ -2,7 +2,7 @@
 
 A cross-platform LEGO set rebuilding and inventory tracking application. Built with Flutter, Supabase, and Material 3 Expressive.
 
-## 🚀 Features
+## Features
 
 - **Set Tracking & Organization:** View your entire Lego set collection, filter by build status, and track your rebuilding progress.
 - **Advanced Part Inventory:** 
@@ -15,7 +15,7 @@ A cross-platform LEGO set rebuilding and inventory tracking application. Built w
 - **Cross-Platform & Desktop Native:** Optimized for all screen sizes with responsive dashboards, navigation rails, and a seamless native desktop experience (using `window_manager` for window management and `url_launcher` for URL launching).
 - **Cloud Sync:** Real-time database and user authentication powered by Supabase.
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 - **Framework:** [Flutter](https://flutter.dev) (Linux, macOS, Windows, Android, iOS, Web)
 - **State Management:** [Riverpod](https://riverpod.dev/) (`hooks_riverpod` + `riverpod_annotation`)
@@ -25,7 +25,7 @@ A cross-platform LEGO set rebuilding and inventory tracking application. Built w
   - `motor` for smooth layout animations.
 - **Native OS Integrations:** `window_manager` configures desktop window sizes and positioning, while `url_launcher` securely opens external URLs across supported platforms.
 
-## 📁 Core Code Architecture
+## Core Code Architecture
 
 For future developers and AI agents, here is a high-level overview of how the app is structured:
 
