@@ -75,6 +75,7 @@ class UsersApi {
       },
       form: true,
     );
+    if (response == null) return {};
     return response as Map<String, dynamic>;
   }
 
@@ -104,6 +105,7 @@ class UsersApi {
       '/users/$userToken/profile/',
       authHeaderKey: apiKey,
     );
+    if (response == null) return {};
     return response as Map<String, dynamic>;
   }
 
@@ -123,6 +125,7 @@ class UsersApi {
         'page_size': pageSize,
       },
     );
+    if (response == null) return {'results': []};
     return response as Map<String, dynamic>;
   }
 
